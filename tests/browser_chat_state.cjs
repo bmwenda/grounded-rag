@@ -114,6 +114,10 @@ function chatAction(nodes, index) {
 }
 
 (async () => {
+  const html = fs.readFileSync(path.join(__dirname, '../src/static/index.html'), 'utf8');
+  assert.match(html, /id="active-chats"[^>]*>Chats<\/button>/);
+  assert.match(html, /id="history-filter"[^>]*>Archived<\/button>/);
+
   const restored = await run(2);
   assert(restored.requests.includes('POST /v1/chats/2/messages'));
   assert(!restored.requests.includes('POST /v1/chats'));
@@ -159,13 +163,24 @@ function chatAction(nodes, index) {
 
   await chatAction(managed.nodes, 1).on_click();
   assert(managed.payloads.some(payload => payload.status === 'archived'));
-  assert.equal(managed.nodes.get('history-filter').textContent, 'Active');
+  assert(managed.nodes.get('history-filter').classList.contains('selected'));
+  assert(!managed.nodes.get('active-chats').classList.contains('selected'));
   assert.equal(managed.nodes.get('question').disabled, true);
   assert.equal(chatAction(managed.nodes, 1).textContent, 'Reactivate');
 
+  await managed.nodes.get('active-chats').on_click();
+  assert(managed.requests.at(-1).includes('status=active'));
+  assert(managed.nodes.get('active-chats').classList.contains('selected'));
+  assert(!managed.nodes.get('history-filter').classList.contains('selected'));
+  assert.equal(managed.nodes.get('chat-list').children[0].textContent,
+    'No chats yet. Start with a question.');
+
+  await managed.nodes.get('history-filter').on_click();
+  assert(managed.requests.at(-1).includes('status=archived'));
   await chatAction(managed.nodes, 1).on_click();
   assert(managed.payloads.some(payload => payload.status === 'active'));
-  assert.equal(managed.nodes.get('history-filter').textContent, 'Archived');
+  assert(managed.nodes.get('active-chats').classList.contains('selected'));
+  assert(!managed.nodes.get('history-filter').classList.contains('selected'));
   assert.equal(managed.nodes.get('question').disabled, false);
 
   const invalidRename = await run(2, false, { send: false });

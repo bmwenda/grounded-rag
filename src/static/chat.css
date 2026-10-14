@@ -100,12 +100,32 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 29px 12px 11px;
+  padding: 29px 12px 8px;
   color: #777;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.history-heading button {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #777;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 4px 0 8px;
+}
+
+.history-heading button:hover,
+.history-heading button.selected {
+  color: #191919;
+}
+
+.history-heading button.selected {
+  border-bottom-color: #191919;
 }
 
 .text-button {

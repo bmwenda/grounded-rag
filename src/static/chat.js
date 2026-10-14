@@ -79,6 +79,10 @@
     $("message-list").replaceChildren(box);
   }
   function renderChats() {
+    $("active-chats").classList.toggle("selected", state.filter === "active");
+    $("active-chats").setAttribute("aria-pressed", String(state.filter === "active"));
+    $("history-filter").classList.toggle("selected", state.filter === "archived");
+    $("history-filter").setAttribute("aria-pressed", String(state.filter === "archived"));
     const list = $("chat-list"); list.replaceChildren();
     if (!state.chats.length && !state.listLoading && !state.listError) {
       const empty = document.createElement("p"); empty.className = "sidebar-empty";
@@ -205,7 +209,6 @@
       state.chats = state.chats.filter(item => item.id !== chat.id);
       if (state.chatId === chat.id) {
         state.filter = status;
-        $("history-filter").textContent = status === "active" ? "Archived" : "Active";
         state.chats = [];
         selectChat(updated);
         await loadChats();
@@ -213,7 +216,7 @@
         renderChats();
         showNotice(status === "archived"
           ? "Chat archived. Open Archived to find or reactivate it."
-          : "Chat reactivated. Open Active to find it.");
+          : "Chat reactivated. Open Chats to find it.");
       }
     } catch (error) {
       if (state.token) showNotice(error.message);
@@ -293,7 +296,6 @@
     sessionStorage.removeItem("simple-rag-chat-id");
     if (state.filter !== "active") {
       state.filter = "active";
-      $("history-filter").textContent = "Archived";
       state.chats = [];
       state.nextChatCursor = null;
       loadChats();
@@ -373,7 +375,6 @@
         showNotice(`${error.message} Your question may have been saved. Check the conversation before sending again.`, async () => {
           hideNotice();
           state.filter = "active";
-          $("history-filter").textContent = "Archived";
           await loadChats();
           if (chatId !== null) await loadMessages(chatId);
           else if (state.chats.length) selectChat(state.chats[0]);
@@ -389,13 +390,14 @@
   $("new-chat").addEventListener("click", newChat);
   $("sign-out").addEventListener("click", () => disconnect());
   $("more-chats").addEventListener("click", () => loadChats(true));
-  $("history-filter").addEventListener("click", async () => {
-    state.filter = state.filter === "active" ? "archived" : "active";
-    $("history-filter").textContent = state.filter === "active" ? "Archived" : "Active";
+  async function showChatFilter(filter) {
+    state.filter = filter;
     state.renamingChatId = null;
     state.chats = []; state.nextChatCursor = null;
     await loadChats();
-  });
+  }
+  $("active-chats").addEventListener("click", () => showChatFilter("active"));
+  $("history-filter").addEventListener("click", () => showChatFilter("archived"));
   $("menu-toggle").addEventListener("click", () => {
     const open = $("sidebar").classList.toggle("open");
     $("menu-toggle").setAttribute("aria-expanded", String(open));
