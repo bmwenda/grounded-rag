@@ -128,7 +128,9 @@ uv run uvicorn src.api.main:app --host 127.0.0.1 --port 8000
 
 Open `http://127.0.0.1:8000/` for the browser chat. Enter the bearer token
 to see your chats, ask questions, and expand source references on answers.
-The token is kept in browser session storage and cleared when you disconnect
+Use the menu beside a chat to rename or archive it. Archived chats remain
+readable and can be reactivated from the Archived list.
+The token is kept in browser session storage and cleared when you log out
 or close the tab. The selected chat is restored after a reload in the same tab;
 use New chat to begin a separate conversation. If sending fails, reload the
 conversation before trying again: the question may already have been saved by
