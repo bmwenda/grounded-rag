@@ -18,6 +18,11 @@ def test_chat_page_and_assets_are_served() -> None:
     assert "text/html" in page.headers["content-type"]
     assert 'id="auth-form"' in page.text
     assert 'id="composer-form"' in page.text
+    assert 'class="app-shell logged-out"' in page.text
+    assert "Log in to Simple RAG" in page.text
+    assert "Company knowledge" in page.text
+    assert "Log out" in page.text
+    assert "Disconnect" not in page.text
 
     script = client.get("/static/chat.js")
     styles = client.get("/static/chat.css")
@@ -25,6 +30,7 @@ def test_chat_page_and_assets_are_served() -> None:
     assert "Bearer ${state.token}" in script.text
     assert styles.status_code == 200
     assert "@media(max-width:700px)" in styles.text
+    assert ".app-shell.logged-out .sidebar" in styles.text
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")

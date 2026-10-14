@@ -31,6 +31,8 @@
     state.requestId++;
     $("chat-list").replaceChildren();
     $("profile-name").textContent = "Your workspace";
+    $("app-shell").classList.add("logged-out");
+    $("chat-heading").textContent = "Log in";
     $("auth-view").classList.remove("hidden");
     $("chat-view").classList.add("hidden");
     $("auth-error").textContent = message || "";
@@ -188,6 +190,7 @@
       if (!state.token) return;
       $("auth-view").classList.add("hidden");
       $("chat-view").classList.remove("hidden");
+      $("app-shell").classList.remove("logged-out");
       if (Number.isSafeInteger(savedChatId) && savedChatId > 0) {
         try {
           const chat = state.chats.find(item => item.id === savedChatId)

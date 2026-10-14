@@ -9,21 +9,21 @@
   <script src="/static/chat.js" defer></script>
 </head>
 <body>
-  <div class="app-shell">
+  <div class="app-shell logged-out" id="app-shell">
     <aside class="sidebar" id="sidebar" aria-label="Chat history">
       <div class="brand"><span class="brand-mark" aria-hidden="true">▦</span><span>Simple RAG</span><button class="sidebar-close" id="sidebar-close" type="button" aria-label="Close chat history">×</button></div>
       <button class="new-chat" id="new-chat" type="button"><span aria-hidden="true">＋</span> New chat</button>
       <div class="history-heading"><span>Chats</span><button id="history-filter" class="text-button" type="button">Archived</button></div>
       <nav id="chat-list" aria-label="Chats"></nav>
       <button id="more-chats" class="more-button hidden" type="button">Load more chats</button>
-      <div class="sidebar-bottom"><span id="profile-name">Your workspace</span><button id="sign-out" class="text-button" type="button">Disconnect</button></div>
+      <div class="sidebar-bottom"><span id="profile-name">Your workspace</span><button id="sign-out" class="text-button" type="button">Log out</button></div>
     </aside>
 
     <main class="main-panel">
-      <header class="topbar"><button class="mobile-menu" id="menu-toggle" type="button" aria-label="Toggle chat history" aria-controls="sidebar" aria-expanded="false">☰</button><span id="chat-heading">New chat</span><span class="topbar-label">Grounded answers</span></header>
+      <header class="topbar"><button class="mobile-menu" id="menu-toggle" type="button" aria-label="Toggle chat history" aria-controls="sidebar" aria-expanded="false">☰</button><span id="chat-heading">Log in</span><span class="topbar-label">Company knowledge</span></header>
       <section class="auth-view" id="auth-view" aria-labelledby="auth-title">
-        <div class="auth-card"><div class="auth-icon" aria-hidden="true">▦</div><p class="eyebrow">SIMPLE RAG</p><h1 id="auth-title">Connect to your chats</h1><p>Enter the API bearer token provided by your administrator. It stays in this browser tab session.</p>
-          <form id="auth-form"><label for="token">Bearer token</label><input id="token" type="password" required autocomplete="off" spellcheck="false" placeholder="Paste your token"><button class="primary-button" type="submit">Connect <span aria-hidden="true">→</span></button></form>
+        <div class="auth-card"><div class="auth-icon" aria-hidden="true">▦</div><p class="eyebrow">COMPANY KNOWLEDGE</p><h1 id="auth-title">Log in to Simple RAG</h1><p>Log in to access your chats and ask questions about company documents. Enter the API bearer token provided by your administrator; it stays in this browser tab session.</p>
+          <form id="auth-form"><label for="token">Bearer token</label><input id="token" type="password" required autocomplete="off" spellcheck="false" placeholder="Paste your token"><button class="primary-button" type="submit">Log in <span aria-hidden="true">→</span></button></form>
           <p id="auth-error" class="form-error hidden" role="alert"></p>
         </div>
       </section>

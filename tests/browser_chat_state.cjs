@@ -11,6 +11,7 @@ function element() {
     classList: {
       add: (name) => classes.add(name),
       remove: (name) => classes.delete(name),
+      contains: (name) => classes.has(name),
       toggle: (name, force) => {
         const on = force === undefined ? !classes.has(name) : force;
         if (on) classes.add(name); else classes.delete(name);
@@ -24,9 +25,10 @@ function element() {
   };
 }
 
-async function run(savedChatId, startNewChat = false) {
+async function run(savedChatId, startNewChat = false, options = {}) {
   const nodes = new Map();
-  const entries = new Map([['simple-rag-token', 'test-token']]);
+  const entries = new Map();
+  if (options.token !== false) entries.set('simple-rag-token', 'test-token');
   if (savedChatId !== null) entries.set('simple-rag-chat-id', String(savedChatId));
   const requests = [];
   const chat = { id: 2, title: 'Parent chat', status: 'active' };
@@ -70,10 +72,12 @@ async function run(savedChatId, startNewChat = false) {
   vm.runInNewContext(script, context);
   for (let i = 0; i < 10; i++) await new Promise(setImmediate);
   if (startNewChat) nodes.get('new-chat').on_click();
-  nodes.get('question').value = 'Follow-up';
-  nodes.get('composer-form').on_submit({ preventDefault() {} });
-  for (let i = 0; i < 10; i++) await new Promise(setImmediate);
-  return { requests, entries };
+  if (options.send !== false) {
+    nodes.get('question').value = 'Follow-up';
+    nodes.get('composer-form').on_submit({ preventDefault() {} });
+    for (let i = 0; i < 10; i++) await new Promise(setImmediate);
+  }
+  return { requests, entries, nodes };
 }
 
 (async () => {
@@ -89,4 +93,18 @@ async function run(savedChatId, startNewChat = false) {
   const reset = await run(2, true);
   assert(reset.requests.includes('POST /v1/chats'));
   assert(!reset.requests.includes('POST /v1/chats/2/messages'));
+
+  const loggedOut = await run(null, false, { token: false, send: false });
+  assert(loggedOut.nodes.get('app-shell').classList.contains('logged-out'));
+  assert(loggedOut.nodes.get('chat-view').classList.contains('hidden'));
+  assert(!loggedOut.nodes.get('auth-view').classList.contains('hidden'));
+  assert.equal(loggedOut.nodes.get('chat-heading').textContent, 'Log in');
+  assert.equal(loggedOut.requests.length, 0);
+
+  const loggedIn = await run(2, false, { send: false });
+  assert(!loggedIn.nodes.get('app-shell').classList.contains('logged-out'));
+  assert(loggedIn.nodes.get('auth-view').classList.contains('hidden'));
+  loggedIn.nodes.get('sign-out').on_click();
+  assert(loggedIn.nodes.get('app-shell').classList.contains('logged-out'));
+  assert.equal(loggedIn.entries.has('simple-rag-token'), false);
 })().catch((error) => { console.error(error); process.exitCode = 1; });
