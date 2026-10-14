@@ -143,7 +143,6 @@
       button.addEventListener("click", () => selectChat(chat));
       const actions = document.createElement("details"); actions.className = "chat-actions";
       actions.addEventListener("toggle", () => {
-        entry.classList.toggle("menu-open", actions.open);
         if (actions.open) {
           if (openChatActions && openChatActions !== actions) closeChatActions();
           openChatActions = actions;
