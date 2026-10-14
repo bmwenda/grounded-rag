@@ -160,6 +160,13 @@ retention work will purge deleted data.
 There is no public registration route. A replaceable token verifier is tracked
 separately in the Chat Interface backlog.
 
+Deleted chats and users are physically removed by the host-scheduled
+`uv run chat-retention` command. It is independent of the web process and only
+requires `DATABASE_URL`, so the same command works with cron, AWS Batch,
+Kubernetes CronJobs, and similar schedulers. See
+[Chat-history retention](docs/chat-retention.md) for configuration, the
+recommended six-hour schedule, AWS guidance, retries, and monitoring.
+
 `src/api/main.py` builds the app and includes resource routers under `/v1`.
 Place new HTTP handlers in `src/api/routers/`, request and response schemas in
 `src/api/schemas/`, and shared authentication or service dependencies in

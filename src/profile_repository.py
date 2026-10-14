@@ -7,6 +7,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     String,
     select,
@@ -39,6 +40,7 @@ class UserRow(Base):
     __tablename__ = "users"
     __table_args__ = (
         CheckConstraint("email = lower(email)", name="ck_users_email_normalized"),
+        Index("ix_users_deleted_at", "deleted_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)

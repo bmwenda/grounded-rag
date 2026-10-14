@@ -51,6 +51,7 @@ class ChatRow(Base):
     __table_args__ = (
         CheckConstraint("status IN ('active', 'archived')", name="ck_chats_status"),
         Index("ix_chats_owner_updated", "user_id", "updated_at", "id"),
+        Index("ix_chats_deleted_at", "deleted_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
