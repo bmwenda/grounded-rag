@@ -90,6 +90,11 @@ async function run(savedChatId, startNewChat = false, options = {}) {
   assert(fresh.requests.includes('POST /v1/chats'));
   assert.equal(fresh.entries.get('simple-rag-chat-id'), '2');
 
+  const emptyChat = await run(null, false, { send: false });
+  const welcome = emptyChat.nodes.get('message-list').children[0];
+  assert.equal(welcome.children[1].textContent, 'Find answers across your organisation');
+  assert.match(welcome.children[2].textContent, /organisation's knowledge base/);
+
   const reset = await run(2, true);
   assert(reset.requests.includes('POST /v1/chats'));
   assert(!reset.requests.includes('POST /v1/chats/2/messages'));
