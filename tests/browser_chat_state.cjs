@@ -68,7 +68,7 @@ async function run(savedChatId, startNewChat = false, options = {}) {
       return { ok: true, status: options.method === 'POST' ? 201 : 200, json: async () => data };
     },
   };
-  const script = fs.readFileSync(path.join(__dirname, '../src/api/static/chat.js'), 'utf8');
+  const script = fs.readFileSync(path.join(__dirname, '../src/static/chat.js'), 'utf8');
   vm.runInNewContext(script, context);
   for (let i = 0; i < 10; i++) await new Promise(setImmediate);
   if (startNewChat) nodes.get('new-chat').on_click();

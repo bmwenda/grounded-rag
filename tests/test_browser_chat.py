@@ -29,7 +29,7 @@ def test_chat_page_and_assets_are_served() -> None:
     assert script.status_code == 200
     assert "Bearer ${state.token}" in script.text
     assert styles.status_code == 200
-    assert "@media(max-width:700px)" in styles.text
+    assert "@media (max-width: 700px)" in styles.text
     assert ".app-shell.logged-out .sidebar" in styles.text
 
 

@@ -32,6 +32,9 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["src*"]
 
+[tool.setuptools.package-data]
+src = ["static/*.css", "static/*.html", "static/*.js"]
+
 [tool.uv]
 package = true
 required-environments = [
