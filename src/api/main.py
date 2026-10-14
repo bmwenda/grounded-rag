@@ -58,7 +58,7 @@ def create_app(
     register_error_handlers(application)
     application.include_router(profile_router, prefix="/v1")
     application.include_router(chat_router, prefix="/v1")
-    static_directory = Path(__file__).with_name("static")
+    static_directory = Path(__file__).resolve().parents[1] / "static"
     application.mount("/static", StaticFiles(directory=static_directory), name="static")
 
     @application.get("/", include_in_schema=False)
