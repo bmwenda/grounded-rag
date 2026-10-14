@@ -21,6 +21,9 @@ function element() {
     addEventListener(name, callback) { this[`on_${name}`] = callback; },
     append(...children) { this.children.push(...children); },
     replaceChildren(...children) { this.children = children; },
+    contains(target) {
+      return this === target || this.children.some(child => child.contains?.(target));
+    },
     remove() {}, setAttribute() {}, focus() {},
   };
 }
@@ -32,6 +35,7 @@ async function run(savedChatId, startNewChat = false, scenario = {}) {
   if (savedChatId !== null) entries.set('simple-rag-chat-id', String(savedChatId));
   const requests = [];
   const payloads = [];
+  const documentEvents = new Map();
   let listCalls = 0;
   let chat = { id: 2, title: 'Parent chat', status: 'active' };
   const context = {
@@ -47,7 +51,7 @@ async function run(savedChatId, startNewChat = false, scenario = {}) {
         Object.defineProperty(node, 'id', { set(value) { nodes.set(value, node); } });
         return node;
       },
-      addEventListener() {},
+      addEventListener(name, callback) { documentEvents.set(name, callback); },
     },
     sessionStorage: {
       getItem: (key) => entries.get(key) ?? null,
@@ -104,13 +108,15 @@ async function run(savedChatId, startNewChat = false, scenario = {}) {
     nodes.get('composer-form').on_submit({ preventDefault() {} });
     for (let i = 0; i < 10; i++) await new Promise(setImmediate);
   }
-  return { requests, payloads, entries, nodes };
+  return { requests, payloads, entries, nodes, documentEvents };
+}
+
+function chatMenu(nodes, index = 0) {
+  return nodes.get('chat-list').children[index].children[0].children[1];
 }
 
 function chatAction(nodes, index) {
-  const entry = nodes.get('chat-list').children[0];
-  const details = entry.children[0].children[1];
-  return details.children[1].children[index];
+  return chatMenu(nodes).children[1].children[index];
 }
 
 (async () => {
@@ -151,6 +157,13 @@ function chatAction(nodes, index) {
   assert.equal(loggedIn.entries.has('simple-rag-token'), false);
 
   const managed = await run(2, false, { send: false });
+  const activeMenu = chatMenu(managed.nodes);
+  activeMenu.open = true; activeMenu.on_toggle();
+  managed.documentEvents.get('click')({ target: chatAction(managed.nodes, 0) });
+  assert.equal(activeMenu.open, true);
+  managed.documentEvents.get('click')({ target: managed.nodes.get('question') });
+  assert.equal(activeMenu.open, false);
+
   chatAction(managed.nodes, 0).on_click();
   const nameInput = managed.nodes.get('rename-chat-title');
   nameInput.value = 'Benefits and policies';
@@ -167,6 +180,10 @@ function chatAction(nodes, index) {
   assert(!managed.nodes.get('active-chats').classList.contains('selected'));
   assert.equal(managed.nodes.get('question').disabled, true);
   assert.equal(chatAction(managed.nodes, 1).textContent, 'Reactivate');
+  const archivedMenu = chatMenu(managed.nodes);
+  archivedMenu.open = true; archivedMenu.on_toggle();
+  managed.documentEvents.get('click')({ target: managed.nodes.get('conversation') });
+  assert.equal(archivedMenu.open, false);
 
   await managed.nodes.get('active-chats').on_click();
   assert(managed.requests.at(-1).includes('status=active'));
@@ -213,4 +230,10 @@ function chatAction(nodes, index) {
   await paginated.nodes.get('more-chats').on_click();
   assert(paginated.requests.some(request => request.includes('cursor=page2')));
   assert.equal(paginated.nodes.get('chat-list').children.length, 2);
+  const firstMenu = chatMenu(paginated.nodes);
+  const secondMenu = chatMenu(paginated.nodes, 1);
+  firstMenu.open = true; firstMenu.on_toggle();
+  secondMenu.open = true; secondMenu.on_toggle();
+  assert.equal(firstMenu.open, false);
+  assert.equal(secondMenu.open, true);
 })().catch((error) => { console.error(error); process.exitCode = 1; });

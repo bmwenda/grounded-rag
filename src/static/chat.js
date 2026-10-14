@@ -5,6 +5,12 @@
     chats: [], nextChatCursor: null, filter: "active", busy: false, requestId: 0,
     listRequestId: 0, listLoading: false, listError: null, listAppend: false,
     renamingChatId: null, renameDraft: "" };
+  let openChatActions = null;
+
+  function closeChatActions() {
+    if (openChatActions) openChatActions.open = false;
+    openChatActions = null;
+  }
 
   function showNotice(message, action) {
     $("notice-text").textContent = message;
@@ -79,6 +85,7 @@
     $("message-list").replaceChildren(box);
   }
   function renderChats() {
+    closeChatActions();
     $("active-chats").classList.toggle("selected", state.filter === "active");
     $("active-chats").setAttribute("aria-pressed", String(state.filter === "active"));
     $("history-filter").classList.toggle("selected", state.filter === "archived");
@@ -137,6 +144,10 @@
       const actions = document.createElement("details"); actions.className = "chat-actions";
       actions.addEventListener("toggle", () => {
         entry.classList.toggle("menu-open", actions.open);
+        if (actions.open) {
+          if (openChatActions && openChatActions !== actions) closeChatActions();
+          openChatActions = actions;
+        } else if (openChatActions === actions) openChatActions = null;
       });
       const summary = document.createElement("summary");
       summary.textContent = "⋯";
@@ -403,8 +414,11 @@
     $("menu-toggle").setAttribute("aria-expanded", String(open));
   });
   $("sidebar-close").addEventListener("click", closeSidebar);
+  document.addEventListener("click", event => {
+    if (openChatActions && !openChatActions.contains(event.target)) closeChatActions();
+  });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeSidebar();
+    if (event.key === "Escape") { closeChatActions(); closeSidebar(); }
   });
   if (state.token) connect(state.token); else disconnect();
 })();
