@@ -6,6 +6,7 @@ from sqlalchemy.engine import URL
 from src.config import Settings
 from src.domain import DocumentStatus
 from src.ingestion import DocumentIngestionService
+from src.storage import LocalDocumentStorage
 from tests.fakes import FakeDocumentRegistry
 
 
@@ -52,7 +53,10 @@ def make_service(
 ) -> tuple[DocumentIngestionService, FakeDocumentRegistry]:
     settings = make_settings(**settings_overrides)
     registry = FakeDocumentRegistry()
-    return DocumentIngestionService(settings, registry, store), registry
+    return (
+        DocumentIngestionService(settings, registry, store, LocalDocumentStorage()),
+        registry,
+    )
 
 
 def write_source(tmp_path: Path, name: str, content: str) -> Path:
@@ -80,6 +84,20 @@ def test_ingest_source_creates_ready_versioned_document(tmp_path: Path) -> None:
         f"{document.document_id}:1:1",
     ]
     assert registry.get(document.document_id) == document
+
+
+def test_local_storage_prepares_resolved_file_without_copying(tmp_path: Path) -> None:
+    source = write_source(tmp_path, "handbook.txt", "company knowledge")
+    storage = LocalDocumentStorage()
+
+    with storage.prepare_source(str(source)) as prepared:
+        assert prepared.path == source.resolve()
+        assert prepared.source_reference == str(source.resolve())
+        assert prepared.display_name == "handbook.txt"
+        assert prepared.content_type is None
+        assert prepared.path.read_text(encoding="utf-8") == "company knowledge"
+
+    assert source.exists()
 
 
 def test_ingest_source_skips_unchanged_ready_document(tmp_path: Path) -> None:

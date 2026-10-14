@@ -1,6 +1,10 @@
+from collections.abc import Iterator
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any, Protocol
+from urllib.parse import quote, unquote, urlsplit
 
 from .document_types import is_supported_document
 from .domain import ConfigurationError
@@ -15,7 +19,40 @@ class SourceObject:
 
     @property
     def uri(self) -> str:
-        return f"s3://{self.bucket}/{self.key}"
+        return s3_source_uri(self.bucket, self.key)
+
+
+@dataclass(frozen=True)
+class PreparedSource:
+    """A document made available as a local path for parsing and hashing."""
+
+    path: Path
+    source_reference: str
+    display_name: str
+    content_type: str | None = None
+
+
+class DocumentStorage(Protocol):
+    """Resolve a source reference and expose its content for one operation."""
+
+    def prepare_source(
+        self, reference: str
+    ) -> AbstractContextManager[PreparedSource]: ...
+
+
+class LocalDocumentStorage:
+    """Prepare local files without copying them or taking ownership of them."""
+
+    @contextmanager
+    def prepare_source(self, reference: str) -> Iterator[PreparedSource]:
+        path = Path(reference).resolve(strict=True)
+        if not path.is_file():
+            raise ValueError("Local document source is not a file")
+        yield PreparedSource(
+            path=path,
+            source_reference=str(path),
+            display_name=path.name,
+        )
 
 
 class S3Client(Protocol):
@@ -61,6 +98,22 @@ class S3DocumentStorage:
         with destination.open("wb") as output:
             self._client.download_fileobj(source.bucket, source.key, output)
 
+    @contextmanager
+    def prepare_source(self, reference: str) -> Iterator[PreparedSource]:
+        """Validate an S3 URI and stream the object to a temporary file."""
+        bucket, key = _parse_s3_uri(reference)
+        source = self.get_object(bucket, key)
+        suffix = Path(source.key).suffix.lower()
+        with TemporaryDirectory(prefix="simple-rag-ingestion-") as directory:
+            path = Path(directory) / f"source{suffix}"
+            self.download_to(source, path)
+            yield PreparedSource(
+                path=path,
+                source_reference=source.uri,
+                display_name=Path(source.key).name,
+                content_type=source.content_type,
+            )
+
     def _validate_location(self, bucket: str, key: str) -> None:
         if bucket != self._bucket:
             raise ValueError("S3 event bucket is not configured as a source bucket")
@@ -87,6 +140,26 @@ def create_s3_document_storage(
         max_document_size_bytes=max_document_size_bytes,
         region=region,
     )
+
+
+def s3_source_uri(bucket: str, key: str) -> str:
+    """Return an unambiguous URI for an S3 object location."""
+    return f"s3://{bucket}/{quote(key, safe='/')}"
+
+
+def _parse_s3_uri(reference: str) -> tuple[str, str]:
+    parsed = urlsplit(reference)
+    if (
+        parsed.scheme != "s3"
+        or not parsed.netloc
+        or "@" in parsed.netloc
+        or not parsed.path.startswith("/")
+        or parsed.path == "/"
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("S3 source reference must identify a bucket and object key")
+    return parsed.netloc, unquote(parsed.path[1:])
 
 
 def _create_s3_client(region: str | None) -> S3Client:

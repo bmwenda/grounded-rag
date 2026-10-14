@@ -3,25 +3,18 @@ from typing import Any
 from .config import Settings
 from .ingestion import DocumentIngestionService, create_ingestion_service
 from .s3_events import sqs_s3_object_created_events
-from .storage import S3DocumentStorage, create_s3_document_storage
+from .storage import create_s3_document_storage, s3_source_uri
 
 
 class S3IngestionHandler:
-    def __init__(
-        self,
-        service: DocumentIngestionService,
-        storage: S3DocumentStorage,
-    ) -> None:
+    def __init__(self, service: DocumentIngestionService) -> None:
         self._service = service
-        self._storage = storage
 
     def handle(self, event: dict[str, object]) -> list[dict[str, object]]:
         results: list[dict[str, object]] = []
         for record in sqs_s3_object_created_events(event):
-            result = self._service.ingest_s3_object(
-                self._storage,
-                bucket=record.bucket,
-                key=record.key,
+            result = self._service.ingest_source(
+                s3_source_uri(record.bucket, record.key)
             )
             document = result.document
             results.append(
@@ -46,5 +39,6 @@ def lambda_handler(
         max_document_size_bytes=settings.max_document_size_bytes,
         region=settings.aws_region,
     )
-    results = S3IngestionHandler(create_ingestion_service(settings), storage).handle(event)
+    service = create_ingestion_service(settings, storage=storage)
+    results = S3IngestionHandler(service).handle(event)
     return {"processed": len(results), "documents": results}

@@ -1,6 +1,5 @@
 from collections.abc import Iterable
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Protocol
 
 from langchain_core.documents import Document
@@ -10,7 +9,7 @@ from .document_registry import DocumentRegistry
 from .domain import DocumentRecord, DocumentStatus, IngestionResult
 from .embedding import vector_store
 from .loader import load_and_chunk_file
-from .storage import S3DocumentStorage
+from .storage import DocumentStorage, LocalDocumentStorage, PreparedSource
 
 
 class DocumentVectorStore(Protocol):
@@ -48,24 +47,23 @@ class DocumentIngestionService:
         settings: Settings,
         registry: DocumentRegistryPort,
         store: DocumentVectorStore,
+        storage: DocumentStorage,
     ) -> None:
         self._settings = settings
         self._registry = registry
         self._store = store
+        self._storage = storage
 
-    def ingest_source(
-        self,
-        source_path: str,
-        *,
-        source_reference: str | None = None,
-        display_name: str | None = None,
-        content_type: str | None = None,
-    ) -> IngestionResult:
+    def ingest_source(self, source_reference: str) -> IngestionResult:
+        with self._storage.prepare_source(source_reference) as source:
+            return self._ingest_prepared_source(source)
+
+    def _ingest_prepared_source(self, source: PreparedSource) -> IngestionResult:
         record = self._registry.register_source(
-            Path(source_path),
-            source_reference=source_reference,
-            display_name=display_name,
-            content_type=content_type,
+            source.path,
+            source_reference=source.source_reference,
+            display_name=source.display_name,
+            content_type=source.content_type,
         )
         if record.status is DocumentStatus.READY:
             return IngestionResult(document=record, indexed=False)
@@ -73,7 +71,7 @@ class DocumentIngestionService:
         target_version = record.index_version + 1
         try:
             chunks, chunk_ids = load_and_chunk_file(
-                source_path,
+                str(source.path),
                 document_id=record.document_id,
                 index_version=target_version,
                 source_uri=record.source_path,
@@ -125,26 +123,6 @@ class DocumentIngestionService:
 
         raise AssertionError("Ingestion attempts must not be empty")
 
-    def ingest_s3_object(
-        self,
-        storage: S3DocumentStorage,
-        *,
-        bucket: str,
-        key: str,
-    ) -> IngestionResult:
-        """Stream an S3 source object to a temporary file and ingest it."""
-        source = storage.get_object(bucket, key)
-        suffix = Path(source.key).suffix.lower()
-        with TemporaryDirectory(prefix="simple-rag-ingestion-") as directory:
-            temporary_path = Path(directory) / f"source{suffix}"
-            storage.download_to(source, temporary_path)
-            return self.ingest_source(
-                str(temporary_path),
-                source_reference=source.uri,
-                display_name=Path(source.key).name,
-                content_type=source.content_type,
-            )
-
     def ingest_sources(
         self, sources_dir: str | Path | None = None
     ) -> list[IngestionResult]:
@@ -161,11 +139,15 @@ class DocumentIngestionService:
         return [self.ingest_source(str(source_path)) for source_path in source_paths]
 
 
-def create_ingestion_service(settings: Settings) -> DocumentIngestionService:
+def create_ingestion_service(
+    settings: Settings,
+    storage: DocumentStorage | None = None,
+) -> DocumentIngestionService:
     return DocumentIngestionService(
         settings=settings,
         registry=DocumentRegistry(settings.database_url),
         store=vector_store(settings),
+        storage=storage or LocalDocumentStorage(),
     )
 
 
