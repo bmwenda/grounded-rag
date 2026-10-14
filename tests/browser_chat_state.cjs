@@ -121,8 +121,10 @@ function chatAction(nodes, index) {
 
 (async () => {
   const html = fs.readFileSync(path.join(__dirname, '../src/static/index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '../src/static/chat.css'), 'utf8');
   assert.match(html, /id="active-chats"[^>]*>Chats<\/button>/);
   assert.match(html, /id="history-filter"[^>]*>Archived<\/button>/);
+  assert.doesNotMatch(css, /\.chat-entry\.menu-open/);
 
   const restored = await run(2);
   assert(restored.requests.includes('POST /v1/chats/2/messages'));

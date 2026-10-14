@@ -174,10 +174,6 @@ button {
   margin-bottom: 2px;
 }
 
-.chat-entry.menu-open {
-  padding-bottom: 84px;
-}
-
 .chat-row {
   display: flex;
   align-items: center;
