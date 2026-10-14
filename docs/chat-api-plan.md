@@ -1,7 +1,8 @@
 # Chat entities and v1 API plan
 
-Status: Design reference; profile, chat lifecycle, and message routes are
-implemented. Bounded purge remains in the [delivery backlog](specification.md).
+Status: Design reference; profile, chat lifecycle, message routes, and bounded
+retention purge are implemented. Sanitized authentication audit events remain
+in the [delivery backlog](specification.md).
 
 This plan defines the first browser chat release for one authenticated user.
 It covers profile and chat-history resources, not document upload, document
@@ -27,8 +28,9 @@ SQLAlchemy and Alembic, consistent with the document registry.
 ## HTTP conventions
 
 - All routes use `/v1`, JSON request and response bodies, and
-  `Authorization: Bearer <token>`. The identity provider and token verifier are
-  not selected here. There is no unauthenticated user-registration endpoint.
+  `Authorization: Bearer <token>`. The first release validates a configured
+  `API_BEARER_TOKEN` for the single provisioned owner. There is no public user
+  registration endpoint or multi-user identity provider.
 - The authenticated user is resolved from the token. Clients never provide
   `user_id` to create or access chats. Resources belonging to another user
   return `404`, the same as nonexistent resources.
@@ -84,17 +86,22 @@ user message may already be saved, so the client should reload the chat to
 show it without an assistant reply. Clients should not blindly retry a timed-
 out creation request because v1 has no idempotency-key contract.
 
-## Implementation and verification boundaries
+## Implementation status and remaining boundaries
 
-This document specifies behavior; it does not add tables, migrations, API
-handlers, token validation, retention jobs, or a generated OpenAPI document.
-Implementation should validate ownership isolation, normalized email
-uniqueness, message ordering and pagination, archive/reactivation, citation
-snapshots across re-indexing, sanitized failures, and immediate invisibility
-after deletion. The API framework and authentication provider remain open
-implementation choices; neither should change these public routes.
+FastAPI handlers, PostgreSQL persistence, SQLAlchemy/Alembic migrations,
+configured bearer-token validation, ownership checks, and the profile/chat/
+message routes are implemented and covered by tests. The `chat-retention`
+command physically purges deleted profiles and chats after 29 days; a sample
+six-hour host schedule is in `deploy/cron/chat-retention.cron.example`.
+
+Document upload, status, deletion, and health routes remain outside this
+contract and are tracked in issue #36. Authentication outcomes do not yet
+produce the sanitized audit events tracked in issue #46. Generated OpenAPI
+documentation is not enabled for the production app. Copied answer content
+after source-document deletion remains part of the broader privacy decision in
+issue #48.
 
 Related backlog: [HTTP API #36](https://github.com/bmwenda/simple-rag/issues/36),
 [chat persistence #40](https://github.com/bmwenda/simple-rag/issues/40),
-[authentication #46](https://github.com/bmwenda/simple-rag/issues/46), and
+[audit events #46](https://github.com/bmwenda/simple-rag/issues/46), and
 [retention #47](https://github.com/bmwenda/simple-rag/issues/47).
