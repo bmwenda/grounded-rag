@@ -2,7 +2,9 @@
   "use strict";
   const $ = (id) => document.getElementById(id);
   const state = { token: sessionStorage.getItem("simple-rag-token") || "", chatId: null,
-    chats: [], nextChatCursor: null, filter: "active", busy: false, requestId: 0 };
+    chats: [], nextChatCursor: null, filter: "active", busy: false, requestId: 0,
+    listRequestId: 0, listLoading: false, listError: null, listAppend: false,
+    renamingChatId: null, renameDraft: "" };
 
   function showNotice(message, action) {
     $("notice-text").textContent = message;
@@ -29,6 +31,10 @@
     state.chats = [];
     state.nextChatCursor = null;
     state.requestId++;
+    state.listRequestId++;
+    state.listLoading = false;
+    state.listError = null;
+    state.renamingChatId = null;
     $("chat-list").replaceChildren();
     $("profile-name").textContent = "Your workspace";
     $("app-shell").classList.add("logged-out");
@@ -56,7 +62,7 @@
     if (!response.ok) {
       let code = "";
       try { code = (await response.json()).error?.code || ""; } catch (_) { /* no JSON body */ }
-      if (response.status === 409 && code === "chat_archived") throw new Error("This chat is archived. Start a new chat to keep asking questions.");
+      if (response.status === 409 && code === "chat_archived") throw new Error("This chat is archived. Reactivate it to keep asking questions.");
       if (response.status === 409 && code === "chat_busy") throw new Error("This chat is still answering another question. Reload the conversation shortly.");
       if (response.status === 400) throw new Error("The request was not accepted. Check your question and try again.");
       throw new Error("The service could not complete the request. Reload to check what was saved.");
@@ -74,30 +80,144 @@
   }
   function renderChats() {
     const list = $("chat-list"); list.replaceChildren();
-    if (!state.chats.length) {
+    if (!state.chats.length && !state.listLoading && !state.listError) {
       const empty = document.createElement("p"); empty.className = "sidebar-empty";
       empty.textContent = state.filter === "active" ? "No chats yet. Start with a question." : "No archived chats.";
       list.append(empty);
     }
     for (const chat of state.chats) {
+      const entry = document.createElement("div"); entry.className = "chat-entry";
+      if (state.renamingChatId === chat.id) {
+        const form = document.createElement("form"); form.className = "rename-form";
+        const input = document.createElement("input");
+        input.id = "rename-chat-title"; input.type = "text"; input.maxLength = 120;
+        input.value = state.renameDraft; input.setAttribute("aria-label", "Chat name");
+        input.addEventListener("input", () => { state.renameDraft = input.value; });
+        input.addEventListener("keydown", event => {
+          if (event.key === "Escape") { event.stopPropagation(); cancelRename(); }
+        });
+        const save = document.createElement("button"); save.type = "submit";
+        save.textContent = "Save";
+        const cancel = document.createElement("button"); cancel.type = "button";
+        cancel.textContent = "Cancel"; cancel.addEventListener("click", cancelRename);
+        form.addEventListener("submit", async event => {
+          event.preventDefault();
+          const title = state.renameDraft.trim();
+          if (!title) { showNotice("Enter a chat name."); input.focus(); return; }
+          if (title === chat.title) { cancelRename(); return; }
+          input.disabled = true; save.disabled = true;
+          try {
+            const updated = await api(`/chats/${chat.id}`, {
+              method: "PATCH", body: JSON.stringify({ title }),
+            });
+            if (!state.token) return;
+            state.chats = [updated, ...state.chats.filter(item => item.id !== chat.id)];
+            if (state.chatId === chat.id) $("chat-heading").textContent = updated.title;
+            state.renamingChatId = null;
+            hideNotice(); renderChats();
+          } catch (error) {
+            if (state.token) showNotice(error.message);
+          } finally { input.disabled = false; save.disabled = false; }
+        });
+        form.append(input, save, cancel); entry.append(form);
+        list.append(entry);
+        continue;
+      }
+      const row = document.createElement("div"); row.className = "chat-row";
       const button = document.createElement("button");
       button.type = "button"; button.className = `chat-item${chat.id === state.chatId ? " active" : ""}`;
       button.textContent = chat.title;
       button.title = chat.title;
       button.setAttribute("aria-current", chat.id === state.chatId ? "page" : "false");
       button.addEventListener("click", () => selectChat(chat));
-      list.append(button);
+      const actions = document.createElement("details"); actions.className = "chat-actions";
+      actions.addEventListener("toggle", () => {
+        entry.classList.toggle("menu-open", actions.open);
+      });
+      const summary = document.createElement("summary");
+      summary.textContent = "⋯";
+      summary.setAttribute("aria-label", `Manage ${chat.title}`);
+      summary.title = `Manage ${chat.title}`;
+      const menu = document.createElement("div"); menu.className = "chat-menu";
+      const rename = document.createElement("button"); rename.type = "button";
+      rename.textContent = "Rename"; rename.addEventListener("click", () => startRename(chat));
+      const status = document.createElement("button"); status.type = "button";
+      status.textContent = chat.status === "archived" ? "Reactivate" : "Archive";
+      status.addEventListener("click", () => changeChatStatus(chat));
+      menu.append(rename, status); actions.append(summary, menu);
+      row.append(button, actions); entry.append(row); list.append(entry);
+    }
+    if (state.listLoading) {
+      const loading = document.createElement("p"); loading.className = "sidebar-state";
+      loading.textContent = state.listAppend ? "Loading more chats…" : "Loading chats…";
+      loading.setAttribute("role", "status"); list.append(loading);
+    } else if (state.listError) {
+      const failure = document.createElement("div"); failure.className = "sidebar-state sidebar-failure";
+      failure.setAttribute("role", "alert");
+      const message = document.createElement("p"); message.textContent = state.listError;
+      const retry = document.createElement("button"); retry.type = "button";
+      retry.textContent = "Retry"; retry.addEventListener("click", () => loadChats(state.listAppend));
+      failure.append(message, retry); list.append(failure);
     }
     $("more-chats").classList.toggle("hidden", !state.nextChatCursor);
+    $("more-chats").disabled = state.listLoading;
   }
   async function loadChats(append = false) {
+    if (append && !state.nextChatCursor) return;
+    const requestId = ++state.listRequestId;
     const cursor = append ? state.nextChatCursor : null;
     const params = new URLSearchParams({ status: state.filter, limit: "30" });
     if (cursor) params.set("cursor", cursor);
-    const page = await api(`/chats?${params}`);
-    state.chats = append ? [...state.chats, ...page.items] : page.items;
-    state.nextChatCursor = page.next_cursor;
+    state.listLoading = true; state.listError = null; state.listAppend = append;
     renderChats();
+    try {
+      const page = await api(`/chats?${params}`);
+      if (requestId !== state.listRequestId) return;
+      state.chats = append ? [...state.chats, ...page.items] : page.items;
+      state.nextChatCursor = page.next_cursor;
+    } catch {
+      if (requestId === state.listRequestId && state.token) {
+        state.listError = "Could not load chats. Check your connection and retry.";
+      }
+    } finally {
+      if (requestId === state.listRequestId) {
+        state.listLoading = false;
+        renderChats();
+      }
+    }
+  }
+  function startRename(chat) {
+    if (state.busy) return;
+    state.renamingChatId = chat.id; state.renameDraft = chat.title;
+    renderChats(); $("rename-chat-title").focus();
+  }
+  function cancelRename() {
+    state.renamingChatId = null; state.renameDraft = ""; renderChats();
+  }
+  async function changeChatStatus(chat) {
+    if (state.busy) return;
+    const status = chat.status === "archived" ? "active" : "archived";
+    try {
+      const updated = await api(`/chats/${chat.id}`, {
+        method: "PATCH", body: JSON.stringify({ status }),
+      });
+      if (!state.token) return;
+      state.chats = state.chats.filter(item => item.id !== chat.id);
+      if (state.chatId === chat.id) {
+        state.filter = status;
+        $("history-filter").textContent = status === "active" ? "Archived" : "Active";
+        state.chats = [];
+        selectChat(updated);
+        await loadChats();
+      } else {
+        renderChats();
+        showNotice(status === "archived"
+          ? "Chat archived. Open Archived to find or reactivate it."
+          : "Chat reactivated. Open Active to find it.");
+      }
+    } catch (error) {
+      if (state.token) showNotice(error.message);
+    }
   }
   function renderMessage(message) {
     const row = document.createElement("article");
@@ -162,7 +282,7 @@
     sessionStorage.setItem("simple-rag-chat-id", String(chat.id));
     $("chat-heading").textContent = chat.title;
     $("question").disabled = chat.status === "archived";
-    $("question").placeholder = chat.status === "archived" ? "Archived chat · start a new chat to ask" : "Ask a follow-up question…";
+    $("question").placeholder = chat.status === "archived" ? "Archived chat · reactivate it to ask" : "Ask a follow-up question…";
     $("send-button").disabled = chat.status === "archived";
     hideNotice(); renderChats(); closeSidebar(); loadMessages(chat.id);
   }
@@ -171,6 +291,13 @@
     state.requestId++;
     state.chatId = null;
     sessionStorage.removeItem("simple-rag-chat-id");
+    if (state.filter !== "active") {
+      state.filter = "active";
+      $("history-filter").textContent = "Archived";
+      state.chats = [];
+      state.nextChatCursor = null;
+      loadChats();
+    }
     $("chat-heading").textContent = "New chat";
     $("question").disabled = false;
     $("send-button").disabled = false;
@@ -185,12 +312,17 @@
       sessionStorage.setItem("simple-rag-token", state.token);
       $("profile-name").textContent = profile.first_name || profile.email;
       const savedChatId = Number(sessionStorage.getItem("simple-rag-chat-id"));
-      let listError = null;
-      try { await loadChats(); } catch (error) { listError = error; }
-      if (!state.token) return;
       $("auth-view").classList.add("hidden");
       $("chat-view").classList.remove("hidden");
       $("app-shell").classList.remove("logged-out");
+      $("chat-heading").textContent = "Loading chats";
+      $("question").disabled = true;
+      $("send-button").disabled = true;
+      $("new-chat").disabled = true;
+      welcome();
+      await loadChats();
+      if (!state.token) return;
+      $("new-chat").disabled = false;
       if (Number.isSafeInteger(savedChatId) && savedChatId > 0) {
         try {
           const chat = state.chats.find(item => item.id === savedChatId)
@@ -205,9 +337,6 @@
           showNotice("The previous chat could not be reopened. Select it from history or start a new chat.");
         }
       } else newChat();
-      if (listError && state.token) {
-        showNotice(listError.message, () => loadChats().then(hideNotice).catch(e => showNotice(e.message)));
-      }
     } catch (error) {
       if (state.token) {
         $("auth-error").textContent = error.message;
@@ -237,20 +366,17 @@
       }
       $("message-list").append(renderMessage(result.user_message), renderMessage(result.assistant_message));
       $("conversation").scrollTop = $("conversation").scrollHeight;
-      try { await loadChats(); }
-      catch (error) { if (state.token) showNotice(error.message, () => loadChats().then(hideNotice).catch(e => showNotice(e.message))); }
+      await loadChats();
     } catch (error) {
       pending.remove();
       if (state.token) {
         showNotice(`${error.message} Your question may have been saved. Check the conversation before sending again.`, async () => {
           hideNotice();
-          try {
-            state.filter = "active";
-            $("history-filter").textContent = "Archived";
-            await loadChats();
-            if (chatId !== null) await loadMessages(chatId);
-            else if (state.chats.length) selectChat(state.chats[0]);
-          } catch (reloadError) { showNotice(reloadError.message); }
+          state.filter = "active";
+          $("history-filter").textContent = "Archived";
+          await loadChats();
+          if (chatId !== null) await loadMessages(chatId);
+          else if (state.chats.length) selectChat(state.chats[0]);
         });
       }
     } finally { setBusy(false); }
@@ -262,12 +388,13 @@
   });
   $("new-chat").addEventListener("click", newChat);
   $("sign-out").addEventListener("click", () => disconnect());
-  $("more-chats").addEventListener("click", () => loadChats(true).catch(error => showNotice(error.message)));
+  $("more-chats").addEventListener("click", () => loadChats(true));
   $("history-filter").addEventListener("click", async () => {
     state.filter = state.filter === "active" ? "archived" : "active";
     $("history-filter").textContent = state.filter === "active" ? "Archived" : "Active";
-    state.chats = []; renderChats();
-    try { await loadChats(); } catch (error) { showNotice(error.message); }
+    state.renamingChatId = null;
+    state.chats = []; state.nextChatCursor = null;
+    await loadChats();
   });
   $("menu-toggle").addEventListener("click", () => {
     const open = $("sidebar").classList.toggle("open");
