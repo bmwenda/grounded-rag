@@ -4,8 +4,9 @@
 
 This is a Python 3.10–3.13 RAG application managed with `uv`. Runtime code is
 under `src/`: loaders and document-type validation, ingestion and storage,
-retrieval, chat, configuration, and S3/SQS event handling. The remaining CLI
-entry point is `ingest_sources.py` (local ingestion); the browser chat is served by
+retrieval, chat, configuration, and S3/SQS event handling. The query CLI in
+`main.py` is retired; `ingest_sources.py` remains for local ingestion. The
+browser chat is served by
 `src/api/main.py`. Tests live in `tests/` and mirror the runtime modules. Local
 input documents are in the ignored `sources/` directory (configurable with
 `SOURCES_DIRECTORY`); design and operational notes are in `docs/`. Keep new
@@ -20,7 +21,7 @@ submitting changes, run:
 
 ```bash
 uv run ruff check .
-uv run mypy src/ ingest_sources.py
+uv run mypy src/ main.py ingest_sources.py
 uv run pytest
 ```
 
