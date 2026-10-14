@@ -67,8 +67,8 @@
     const box = document.createElement("div");
     box.className = "welcome";
     const mark = document.createElement("div"); mark.className = "welcome-mark"; mark.textContent = "▦";
-    const title = document.createElement("h1"); title.textContent = "Ask your documents";
-    const hint = document.createElement("p"); hint.textContent = "Start with a question. Answers will include their source references.";
+    const title = document.createElement("h1"); title.textContent = "Find answers across your organisation";
+    const hint = document.createElement("p"); hint.textContent = "Ask a question to search your organisation's knowledge base. Answers include source references.";
     box.append(mark, title, hint);
     $("message-list").replaceChildren(box);
   }
