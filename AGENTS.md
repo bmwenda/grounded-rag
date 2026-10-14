@@ -4,9 +4,8 @@
 
 This is a Python 3.10–3.13 RAG application managed with `uv`. Runtime code is
 under `src/`: loaders and document-type validation, ingestion and storage,
-retrieval, chat, configuration, and S3/SQS event handling. The query CLI in
-`main.py` is retired; `ingest_sources.py` remains for local ingestion. The
-browser chat is served by
+retrieval, chat, configuration, and S3/SQS event handling. Local ingestion
+runs from `scripts/ingest_sources.py`. The browser chat is served by
 `src/api/main.py`. Tests live in `tests/` and mirror the runtime modules. Local
 input documents are in the ignored `sources/` directory (configurable with
 `SOURCES_DIRECTORY`); design and operational notes are in `docs/`. Keep new
@@ -15,13 +14,12 @@ provider or domain logic in `src/` rather than in entry-point scripts.
 ## Build, Test, and Development Commands
 
 Install or refresh the environment with `uv sync`. Run local ingestion with
-`uv run python ingest_sources.py`, then start the browser chat API with
+`uv run ingest-sources`, then start the browser chat API with
 `uv run uvicorn src.api.main:app --host 127.0.0.1 --port 8000`. Before
 submitting changes, run:
 
 ```bash
 uv run ruff check .
-uv run mypy src/ main.py ingest_sources.py
 uv run pytest
 ```
 

@@ -34,7 +34,7 @@ jobs:
         run: uv run ruff check .
 
       - name: Run type checks
-        run: uv run mypy src/ main.py ingest_sources.py
+        run: uv run mypy src/ scripts/
 
       - name: Run tests
         run: uv run pytest

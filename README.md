@@ -77,7 +77,7 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 
 5. **Ingest documents:**
    ```bash
-   uv run python ingest_sources.py
+   uv run ingest-sources
    ```
 
 ## Usage
@@ -85,7 +85,7 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 ### Ingest Documents
 
 ```bash
-uv run python ingest_sources.py
+uv run ingest-sources
 ```
 
 Each source receives a persistent document identity and checksum in the
@@ -206,7 +206,7 @@ Run the complete local check suite:
 
 ```bash
 uv run ruff check .
-uv run mypy src/ ingest_sources.py
+uv run mypy src/ scripts/
 uv run pytest
 ```
 

@@ -25,13 +25,14 @@ dependencies = [
 db = "src.db_cli:main"
 profile-admin = "src.profile_admin:main"
 chat-retention = "src.chat_retention:main"
+ingest-sources = "scripts.ingest_sources:main"
 
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["src*"]
+include = ["src*", "scripts*"]
 
 [tool.setuptools.package-data]
 src = ["static/*.css", "static/*.html", "static/*.js"]

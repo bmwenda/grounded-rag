@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from src.config import Settings
 from src.domain import DocumentStatus
 from src.ingestion import create_ingestion_service
