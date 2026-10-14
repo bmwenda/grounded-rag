@@ -23,6 +23,7 @@
   }
   function disconnect(message) {
     sessionStorage.removeItem("simple-rag-token");
+    sessionStorage.removeItem("simple-rag-chat-id");
     state.token = "";
     state.chatId = null;
     state.chats = [];
@@ -156,6 +157,7 @@
   function selectChat(chat) {
     if (state.busy) return;
     state.chatId = chat.id;
+    sessionStorage.setItem("simple-rag-chat-id", String(chat.id));
     $("chat-heading").textContent = chat.title;
     $("question").disabled = chat.status === "archived";
     $("question").placeholder = chat.status === "archived" ? "Archived chat · start a new chat to ask" : "Ask a follow-up question…";
@@ -166,6 +168,7 @@
     if (state.busy) return;
     state.requestId++;
     state.chatId = null;
+    sessionStorage.removeItem("simple-rag-chat-id");
     $("chat-heading").textContent = "New chat";
     $("question").disabled = false;
     $("send-button").disabled = false;
@@ -179,11 +182,29 @@
       const profile = await api("/users/me");
       sessionStorage.setItem("simple-rag-token", state.token);
       $("profile-name").textContent = profile.first_name || profile.email;
+      const savedChatId = Number(sessionStorage.getItem("simple-rag-chat-id"));
+      let listError = null;
+      try { await loadChats(); } catch (error) { listError = error; }
+      if (!state.token) return;
       $("auth-view").classList.add("hidden");
       $("chat-view").classList.remove("hidden");
-      newChat();
-      try { await loadChats(); }
-      catch (error) { if (state.token) showNotice(error.message, () => loadChats().then(hideNotice).catch(e => showNotice(e.message))); }
+      if (Number.isSafeInteger(savedChatId) && savedChatId > 0) {
+        try {
+          const chat = state.chats.find(item => item.id === savedChatId)
+            || await api(`/chats/${savedChatId}`);
+          if (chat.status === state.filter && !state.chats.some(item => item.id === chat.id)) {
+            state.chats.unshift(chat);
+          }
+          selectChat(chat);
+        } catch (error) {
+          if (!state.token) return;
+          newChat();
+          showNotice("The previous chat could not be reopened. Select it from history or start a new chat.");
+        }
+      } else newChat();
+      if (listError && state.token) {
+        showNotice(listError.message, () => loadChats().then(hideNotice).catch(e => showNotice(e.message)));
+      }
     } catch (error) {
       if (state.token) {
         $("auth-error").textContent = error.message;
@@ -207,6 +228,7 @@
       $("question").value = "";
       if (chatId === null) {
         state.chatId = result.chat.id;
+        sessionStorage.setItem("simple-rag-chat-id", String(result.chat.id));
         $("chat-heading").textContent = result.chat.title;
         $("message-list").replaceChildren();
       }
