@@ -1,6 +1,9 @@
 ## Description
 
-This is a simple Retrieval-Augmented Generation (RAG) command line application that enables you to load documents, process them into searchable chunks, and retrieve relevant information using semantic search. It combines document ingestion, embedding, and intelligent retrieval to provide context-aware responses.
+This is a simple Retrieval-Augmented Generation (RAG) application for searching
+an organization's knowledge base through an authenticated browser chat. It
+combines document ingestion, embedding, and retrieval to provide source-backed
+answers.
 
 The implemented capabilities, deployment constraints, and remaining delivery
 tasks are maintained in the [product and delivery specification](docs/specification.md).
@@ -183,16 +186,19 @@ stable `s3://bucket/key` identity. See
 [S3 source-bucket ingestion](docs/s3-ingestion.md) for IAM, event, and retry
 guidance.
 
-### Query Documents
+### Ask questions in the browser
+
+Start the API from the project root after preparing the database and
+provisioning the owner:
 
 ```bash
-uv run python main.py
+uv run uvicorn src.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-This opens a chat interface for asking questions about the ingested documents.
-Answers include numbered sources with PDF page numbers when available. If no
-retrieved content meets the configured relevance threshold, the application
-returns an explicit no-answer response instead of calling the chat model.
+Open `http://127.0.0.1:8000/` and enter the configured bearer token. Answers
+include numbered source references, with PDF page numbers when available. If
+no retrieved content meets the relevance threshold, the browser chat returns
+an explicit no-answer response.
 
 ## Development
 
@@ -200,7 +206,7 @@ Run the complete local check suite:
 
 ```bash
 uv run ruff check .
-uv run mypy src/ main.py ingest_sources.py
+uv run mypy src/ ingest_sources.py
 uv run pytest
 ```
 
