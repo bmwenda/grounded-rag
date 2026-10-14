@@ -2,9 +2,12 @@
 
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from threading import Lock
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from src.chat_history_service import ManagedChatRepository
 from src.chat_repository import SqlChatRepository
@@ -55,6 +58,13 @@ def create_app(
     register_error_handlers(application)
     application.include_router(profile_router, prefix="/v1")
     application.include_router(chat_router, prefix="/v1")
+    static_directory = Path(__file__).with_name("static")
+    application.mount("/static", StaticFiles(directory=static_directory), name="static")
+
+    @application.get("/", include_in_schema=False)
+    def chat_page() -> FileResponse:
+        return FileResponse(static_directory / "index.html")
+
     return application
 
 
