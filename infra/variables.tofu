@@ -39,13 +39,35 @@ variable "enable_source_bucket_versioning" {
 }
 
 variable "lambda_artifact_bucket" {
-  description = "Existing private S3 bucket containing the Lambda deployment zip."
+  description = "Existing private S3 bucket containing the Lambda deployment zip; omit to create one."
   type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "artifact_bucket_name" {
+  description = "Globally unique name for the managed Lambda artifact bucket; generated when omitted."
+  type        = string
+  default     = null
+  nullable    = true
 }
 
 variable "lambda_artifact_key" {
   description = "Object key of the Lambda deployment zip."
   type        = string
+  default     = "simple-rag/ingestion.zip"
+}
+
+variable "lambda_artifact_local_path" {
+  description = "Optional local path to upload as the Lambda deployment zip before function creation."
+  type        = string
+  default     = null
+  nullable    = true
+
+  validation {
+    condition     = var.lambda_artifact_local_path == null || trimspace(var.lambda_artifact_local_path) != ""
+    error_message = "lambda_artifact_local_path must be a non-empty path when set."
+  }
 }
 
 variable "lambda_artifact_version" {

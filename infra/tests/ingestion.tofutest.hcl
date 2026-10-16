@@ -39,10 +39,9 @@ mock_provider "aws" {
 }
 
 variables {
-  aws_region             = "eu-west-1"
-  lambda_artifact_bucket = "private-deployment-artifacts"
-  lambda_artifact_key    = "simple-rag/ingestion.zip"
-  source_bucket_name     = "simple-rag-test-sources"
+  aws_region         = "eu-west-1"
+  lambda_artifact_key = "simple-rag/ingestion.zip"
+  source_bucket_name = "simple-rag-test-sources"
 }
 
 run "secure_ingestion_plan" {
@@ -64,6 +63,29 @@ run "secure_ingestion_plan" {
       one(rule.apply_server_side_encryption_by_default).sse_algorithm == "AES256"
     ])
     error_message = "The source bucket must enable server-side encryption."
+  }
+
+  assert {
+    condition = length(aws_s3_bucket_public_access_block.artifact) == 0 ? true : alltrue([
+      aws_s3_bucket_public_access_block.artifact[0].block_public_acls,
+      aws_s3_bucket_public_access_block.artifact[0].block_public_policy,
+      aws_s3_bucket_public_access_block.artifact[0].ignore_public_acls,
+      aws_s3_bucket_public_access_block.artifact[0].restrict_public_buckets,
+    ])
+    error_message = "The managed artifact bucket must block every form of public access."
+  }
+
+  assert {
+    condition = length(aws_s3_bucket_server_side_encryption_configuration.artifact) == 0 ? true : anytrue([
+      for rule in aws_s3_bucket_server_side_encryption_configuration.artifact[0].rule :
+      one(rule.apply_server_side_encryption_by_default).sse_algorithm == "AES256"
+    ])
+    error_message = "The managed artifact bucket must enable server-side encryption."
+  }
+
+  assert {
+    condition     = length(aws_s3_bucket.artifact) == 0 ? true : aws_lambda_function.ingestion.s3_bucket == aws_s3_bucket.artifact[0].id
+    error_message = "Lambda must use the managed artifact bucket by default."
   }
 
   assert {
@@ -114,5 +136,23 @@ run "allow_opt_in_versioning" {
   assert {
     condition     = aws_s3_bucket_versioning.source[0].versioning_configuration[0].status == "Enabled"
     error_message = "Source-bucket versioning must be available as an explicit opt-in."
+  }
+}
+
+run "allow_existing_artifact_bucket" {
+  command = plan
+
+  variables {
+    lambda_artifact_bucket = "private-deployment-artifacts"
+  }
+
+  assert {
+    condition     = length(aws_s3_bucket.artifact) == 0
+    error_message = "An existing artifact bucket must suppress managed artifact-bucket creation."
+  }
+
+  assert {
+    condition     = aws_lambda_function.ingestion.s3_bucket == "private-deployment-artifacts"
+    error_message = "Lambda must use the explicitly supplied artifact bucket."
   }
 }

@@ -1,9 +1,15 @@
 aws_region             = "eu-west-1"
-lambda_artifact_bucket = "replace-with-private-artifact-bucket"
-lambda_artifact_key    = "simple-rag/ingestion.zip"
+# The module creates a private, encrypted artifact bucket in aws_region by default.
+# Supply a local ZIP so OpenTofu uploads it before creating the Lambda function.
+lambda_artifact_local_path = "../dist/ingestion.zip"
 
 # Optional: use a fixed globally unique name instead of a generated bucket name.
 # source_bucket_name = "company-simple-rag-sources"
+# artifact_bucket_name = "company-simple-rag-artifacts"
+
+# Optional: use an existing artifact bucket instead. It must be in aws_region.
+# lambda_artifact_bucket = "company-simple-rag-artifacts"
+# lambda_artifact_key    = "simple-rag/ingestion.zip"
 
 # Optional: prior object versions consume S3 storage and are disabled by default.
 # enable_source_bucket_versioning = true
