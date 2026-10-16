@@ -68,13 +68,16 @@ the SQS event source, and rejection of known application-secret inputs.
 
 ## Plan and apply
 
-Copy `deployment.tfvars.example` to an ignored `.tfvars` file and replace the
-artifact inputs. Keep credentials and application secrets out of tfvars and
-state.
+Copy `deployment.auto.tfvars.example` to an ignored local file ending in
+`.auto.tfvars`, such as `local.auto.tfvars`, and replace the artifact inputs.
+OpenTofu loads those files automatically, so no particular local filename or
+`-var-file` flag is required. Keep credentials and application secrets out of
+tfvars and state. To use a differently named file, pass it explicitly with
+`-var-file=path/to/values.tfvars`.
 
 ```bash
 tofu -chdir=infra init
-tofu -chdir=infra plan -var-file=deployment.tfvars -out=deployment.tfplan
+tofu -chdir=infra plan -out=deployment.tfplan
 tofu -chdir=infra apply deployment.tfplan
 ```
 
