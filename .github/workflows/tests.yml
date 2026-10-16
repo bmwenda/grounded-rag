@@ -9,6 +9,32 @@ permissions:
   contents: read
 
 jobs:
+  infrastructure:
+    name: Validate OpenTofu
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install OpenTofu
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: 1.13.1
+
+      - name: Check OpenTofu formatting
+        run: tofu -chdir=infra fmt -check
+
+      - name: Initialize OpenTofu
+        run: tofu -chdir=infra init -backend=false
+
+      - name: Validate OpenTofu
+        run: tofu -chdir=infra validate
+
+      - name: Test OpenTofu plan
+        run: tofu -chdir=infra test
+
   test:
     name: Test Python 3.12
     runs-on: ubuntu-latest

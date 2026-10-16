@@ -18,3 +18,12 @@ wheels/
 # Chroma files
 chroma_db/
 chroma
+
+# OpenTofu local files
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
