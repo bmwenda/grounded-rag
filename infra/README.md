@@ -3,7 +3,7 @@
 This root module uses OpenTofu to provision the baseline AWS resources for the
 S3-to-SQS-to-Lambda ingestion path:
 
-- a private, encrypted, versioned S3 source bucket;
+- a private, encrypted S3 source bucket with opt-in versioning;
 - an encrypted SQS ingestion queue and encrypted dead-letter queue;
 - the ingestion Lambda function and its SQS event-source mapping;
 - a dedicated execution role limited to the source prefix, ingestion queue,
@@ -26,6 +26,32 @@ The deployment artifact must contain the application and its runtime
 dependencies, with `src.s3_ingestion_handler.lambda_handler` available as the
 handler. The artifact bucket and object key are inputs so neither account IDs
 nor environment-specific locations are embedded in this repository.
+
+## Cost defaults
+
+The defaults favor AWS Free Tier-eligible, on-demand services and avoid
+resources with fixed recurring charges:
+
+- S3 uses S3-managed encryption rather than a customer-managed KMS key, and
+  source-bucket versioning is opt-in so old object versions do not consume
+  storage by default.
+- Both standard SQS queues use SQS-managed encryption rather than a billable
+  customer-managed KMS key. Queues have no provisioned capacity.
+- Lambda uses on-demand execution without provisioned concurrency. Its default
+  1,024 MB memory allocation is configurable and should be lowered only after
+  confirming the document parser still meets its memory and latency targets.
+- CloudWatch Logs retention defaults to seven days to bound stored log data.
+- IAM roles and policies have no additional charge.
+
+These settings do not guarantee a zero bill. S3 storage and requests, SQS
+requests, Lambda requests and duration, CloudWatch log ingestion and storage,
+and data transfer remain usage-based. Free allowances and promotional credits
+depend on account eligibility, account age, Region, and aggregate account
+usage. Review the current [AWS Free Tier](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier.html),
+[S3 pricing](https://aws.amazon.com/s3/pricing/),
+[SQS pricing](https://aws.amazon.com/sqs/pricing/),
+[Lambda pricing](https://aws.amazon.com/lambda/pricing/), and
+[CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/) before apply.
 
 ## Validate and test
 
