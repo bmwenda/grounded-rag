@@ -80,6 +80,16 @@ run "secure_ingestion_plan" {
     condition     = aws_lambda_function.ingestion.environment[0].variables.S3_SOURCE_BUCKET == aws_s3_bucket.source.id
     error_message = "Lambda must receive the provisioned source bucket name."
   }
+
+  assert {
+    condition     = length(aws_s3_bucket_versioning.source) == 0
+    error_message = "Source-bucket versioning must be opt-in to avoid default storage growth."
+  }
+
+  assert {
+    condition     = aws_cloudwatch_log_group.ingestion.retention_in_days == 7
+    error_message = "The default log retention must bound stored CloudWatch data."
+  }
 }
 
 run "reject_application_secrets" {
@@ -92,4 +102,17 @@ run "reject_application_secrets" {
   }
 
   expect_failures = [var.lambda_environment_variables]
+}
+
+run "allow_opt_in_versioning" {
+  command = plan
+
+  variables {
+    enable_source_bucket_versioning = true
+  }
+
+  assert {
+    condition     = aws_s3_bucket_versioning.source[0].versioning_configuration[0].status == "Enabled"
+    error_message = "Source-bucket versioning must be available as an explicit opt-in."
+  }
 }

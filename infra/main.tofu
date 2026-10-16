@@ -37,6 +37,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "source" {
 }
 
 resource "aws_s3_bucket_versioning" "source" {
+  count = var.enable_source_bucket_versioning ? 1 : 0
+
   bucket = aws_s3_bucket.source.id
 
   versioning_configuration {
@@ -88,7 +90,7 @@ resource "aws_iam_role" "ingestion" {
 
 resource "aws_cloudwatch_log_group" "ingestion" {
   name              = "/aws/lambda/${var.name}"
-  retention_in_days = 30
+  retention_in_days = var.log_retention_days
 }
 
 data "aws_iam_policy_document" "ingestion" {
