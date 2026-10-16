@@ -4,6 +4,7 @@ This root module uses OpenTofu to provision the baseline AWS resources for the
 S3-to-SQS-to-Lambda ingestion path:
 
 - a private, encrypted S3 source bucket with opt-in versioning;
+- a private, encrypted S3 deployment-artifact bucket by default;
 - an encrypted SQS ingestion queue and encrypted dead-letter queue;
 - the ingestion Lambda function and its SQS event-source mapping;
 - a dedicated execution role limited to the source prefix, ingestion queue,
@@ -18,14 +19,18 @@ S3 invocation.
 
 - OpenTofu 1.9 or newer;
 - AWS credentials supplied through the standard AWS credential chain;
-- a private S3 artifact bucket containing a Lambda-compatible deployment zip;
+- a Lambda-compatible deployment zip, either available locally for OpenTofu to
+  upload or already stored in a private S3 artifact bucket;
 - application secrets delivered through a runtime secrets integration rather
   than committed files or OpenTofu-managed environment variables.
 
 The deployment artifact must contain the application and its runtime
 dependencies, with `src.s3_ingestion_handler.lambda_handler` available as the
-handler. The artifact bucket and object key are inputs so neither account IDs
-nor environment-specific locations are embedded in this repository.
+handler. By default, the module creates the artifact bucket in `aws_region`,
+which keeps it colocated with the Lambda function. Supply
+`lambda_artifact_bucket` only to use an existing private bucket in that same
+Region. The object key remains configurable so environment-specific locations
+are not embedded in this repository.
 
 ## Cost defaults
 
@@ -33,8 +38,8 @@ The defaults favor AWS Free Tier-eligible, on-demand services and avoid
 resources with fixed recurring charges:
 
 - S3 uses S3-managed encryption rather than a customer-managed KMS key, and
-  source-bucket versioning is opt-in so old object versions do not consume
-  storage by default.
+  both created buckets block public access. Source-bucket versioning is opt-in
+  so old object versions do not consume storage by default.
 - Both standard SQS queues use SQS-managed encryption rather than a billable
   customer-managed KMS key. Queues have no provisioned capacity.
 - Lambda uses on-demand execution without provisioned concurrency. Its default
@@ -69,11 +74,19 @@ the SQS event source, and rejection of known application-secret inputs.
 ## Plan and apply
 
 Copy `deployment.auto.tfvars.example` to an ignored local file ending in
-`.auto.tfvars`, such as `local.auto.tfvars`, and replace the artifact inputs.
-OpenTofu loads those files automatically, so no particular local filename or
-`-var-file` flag is required. Keep credentials and application secrets out of
-tfvars and state. To use a differently named file, pass it explicitly with
-`-var-file=path/to/values.tfvars`.
+`.auto.tfvars`, such as `local.auto.tfvars`, and set
+`lambda_artifact_local_path` to the deployment ZIP. OpenTofu creates a private
+artifact bucket in `aws_region`, uploads that ZIP, and creates Lambda from the
+uploaded object in one apply. OpenTofu loads `.auto.tfvars` files
+automatically, so no particular local filename or `-var-file` flag is required.
+Keep credentials and application secrets out of tfvars and state. To use a
+differently named file, pass it explicitly with `-var-file=path/to/values.tfvars`.
+
+To keep the deployment ZIP in an existing bucket, set
+`lambda_artifact_bucket` and `lambda_artifact_key` instead. The bucket must be
+in `aws_region`; Lambda cannot load a ZIP from another Region. In that mode,
+upload the ZIP before applying. Do not switch `aws_region` for an already
+partially applied stack without first reviewing `tofu state list` and the plan.
 
 ```bash
 tofu -chdir=infra init
