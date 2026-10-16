@@ -184,7 +184,7 @@ notification. The handler accepts only SQS-delivered S3 object-created events,
 then streams each object to a bounded temporary file and ingests it under its
 stable `s3://bucket/key` identity. See
 [S3 source-bucket ingestion](docs/s3-ingestion.md) for IAM, event, and retry
-guidance.
+guidance and [AWS infrastructure](infra/README.md) for the OpenTofu deployment.
 
 ### Ask questions in the browser
 

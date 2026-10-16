@@ -126,7 +126,7 @@ or vector chunk. Size limits apply at every upload and ingestion boundary.
 
 - [ ] [Provision the private source bucket, SQS queue, Lambda mapping, dead
   letter queue, encryption, and least-privilege IAM with
-  Terraform](https://github.com/bmwenda/simple-rag/issues/16).
+  OpenTofu](https://github.com/bmwenda/simple-rag/issues/16).
 - [ ] [Configure S3 object-created notifications and supported-document
   filters](https://github.com/bmwenda/simple-rag/issues/17), delivering only
   to the ingestion queue.
@@ -224,8 +224,8 @@ privacy commitments.
 
 ## Confirmed decisions
 
-- AWS is the supported cloud provider; Terraform is the infrastructure-as-code
-  tool.
+- AWS is the supported cloud provider; OpenTofu is the infrastructure-as-code
+  tool. Terraform is not used for this project.
 - S3 events flow through SQS to Lambda. Direct S3-to-Lambda invocation is
   rejected by the event parser.
 - The default document-size limit is 100 MiB and must be enforced at every

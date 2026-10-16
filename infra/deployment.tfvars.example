@@ -1,0 +1,12 @@
+aws_region             = "eu-west-1"
+lambda_artifact_bucket = "replace-with-private-artifact-bucket"
+lambda_artifact_key    = "simple-rag/ingestion.zip"
+
+# Optional: use a fixed globally unique name instead of a generated bucket name.
+# source_bucket_name = "company-simple-rag-sources"
+
+# Non-secret settings only. Do not put API keys, credentials, or database URLs
+# in committed tfvars files or OpenTofu-managed Lambda environment variables.
+lambda_environment_variables = {
+  OPENAI_MODEL = "gpt-4.1-mini"
+}
