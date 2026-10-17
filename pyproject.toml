@@ -22,6 +22,7 @@ dependencies = [
 ]
 
 [project.scripts]
+build-lambda-package = "scripts.build_lambda_package:main"
 db = "src.db_cli:main"
 profile-admin = "src.profile_admin:main"
 chat-retention = "src.chat_retention:main"
