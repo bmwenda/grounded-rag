@@ -82,6 +82,17 @@ automatically, so no particular local filename or `-var-file` flag is required.
 Keep credentials and application secrets out of tfvars and state. To use a
 differently named file, pass it explicitly with `-var-file=path/to/values.tfvars`.
 
+Create the ZIP before planning or applying:
+
+```bash
+uv run build-lambda-package
+```
+
+The command writes `dist/ingestion.zip`, installs the locked production
+dependencies for Python 3.12 Linux x86_64, and includes the `src/` package. It
+rejects archives over Lambda's 250 MiB uncompressed ZIP limit; use the
+container-image deployment tracked in issue #83 if that happens.
+
 To keep the deployment ZIP in an existing bucket, set
 `lambda_artifact_bucket` and `lambda_artifact_key` instead. The bucket must be
 in `aws_region`; Lambda cannot load a ZIP from another Region. In that mode,
