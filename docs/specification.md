@@ -124,9 +124,12 @@ or vector chunk. Size limits apply at every upload and ingestion boundary.
 
 ### P1 — make AWS event ingestion deployable and operable
 
-- [ ] [Provision the private source bucket, SQS queue, Lambda mapping, dead
-  letter queue, encryption, and least-privilege IAM with
+- [ ] [Provision the private source bucket, SQS queue, dead letter queue,
+  encryption, and least-privilege IAM with
   OpenTofu](https://github.com/bmwenda/simple-rag/issues/16).
+- [ ] [Deploy the ingestion worker as a Lambda container
+  image](https://github.com/bmwenda/simple-rag/issues/83), including the ECR
+  repository and SQS event-source mapping.
 - [ ] [Configure S3 object-created notifications and supported-document
   filters](https://github.com/bmwenda/simple-rag/issues/17), delivering only
   to the ingestion queue.
