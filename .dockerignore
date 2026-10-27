@@ -1,0 +1,16 @@
+.git
+.venv
+.env
+.env.*
+**/__pycache__
+**/*.pyc
+sources
+chroma
+chroma_db
+build
+dist
+docs
+infra
+tests
+*.tfvars
+*.tfvars.json

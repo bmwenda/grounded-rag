@@ -9,6 +9,21 @@ permissions:
   contents: read
 
 jobs:
+  image:
+    name: Build Lambda image
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build Linux x86_64 image
+        run: docker buildx build --platform linux/amd64 --provenance=false --load --tag simple-rag-ingestion:test .
+
+      - name: Verify handler and CPU PyTorch imports
+        run: docker run --rm --platform linux/amd64 --entrypoint /var/lang/bin/python3.12 simple-rag-ingestion:test -c 'import torch; from src.s3_ingestion_handler import lambda_handler; assert not torch.cuda.is_available()'
+
   infrastructure:
     name: Validate OpenTofu
     runs-on: ubuntu-latest

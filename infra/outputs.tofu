@@ -27,3 +27,13 @@ output "lambda_execution_role_arn" {
   description = "ARN of the least-privilege Lambda execution role."
   value       = aws_iam_role.ingestion.arn
 }
+
+output "ecr_repository_url" {
+  description = "Private ECR repository URL in the selected AWS Region."
+  value       = aws_ecr_repository.ingestion.repository_url
+}
+
+output "lambda_function_arn" {
+  description = "Ingestion Lambda ARN; null until an image digest is configured."
+  value       = var.image_digest == null ? null : aws_lambda_function.ingestion[0].arn
+}

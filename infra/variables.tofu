@@ -38,14 +38,96 @@ variable "enable_source_bucket_versioning" {
   default     = false
 }
 
+variable "image_digest" {
+  description = "ECR image digest to deploy; omit while creating the repository before the first push."
+  type        = string
+  default     = null
+  nullable    = true
+
+  validation {
+    condition     = var.image_digest == null ? true : can(regex("^sha256:[0-9a-f]{64}$", var.image_digest))
+    error_message = "image_digest must be an ECR sha256 digest."
+  }
+}
+
+variable "runtime_secret_arn" {
+  description = "ARN of an existing Secrets Manager JSON secret with the ingestion runtime credentials."
+  type        = string
+  default     = null
+  nullable    = true
+
+  validation {
+    condition     = var.runtime_secret_arn == null ? true : can(regex("^arn:[^:]+:secretsmanager:[^:]+:[0-9]{12}:secret:.+", var.runtime_secret_arn))
+    error_message = "runtime_secret_arn must be a Secrets Manager secret ARN."
+  }
+}
+
+variable "lambda_environment_variables" {
+  description = "Non-secret environment variables for the ingestion worker."
+  type        = map(string)
+  default     = {}
+
+  validation {
+    condition = alltrue([
+      for name in keys(var.lambda_environment_variables) :
+      !contains(["API_BEARER_TOKEN", "DATABASE_URL", "OPENAI_API_KEY", "INGESTION_RUNTIME_SECRET_ARN", "MAX_DOCUMENT_SIZE_BYTES", "S3_SOURCE_BUCKET", "S3_SOURCE_PREFIX"], upper(name))
+    ])
+    error_message = "Secrets and managed ingestion settings cannot be supplied through lambda_environment_variables."
+  }
+}
+
+variable "lambda_timeout_seconds" {
+  description = "Maximum Lambda execution time in seconds."
+  type        = number
+  default     = 300
+
+  validation {
+    condition     = var.lambda_timeout_seconds >= 1 && var.lambda_timeout_seconds <= 900
+    error_message = "lambda_timeout_seconds must be between 1 and 900."
+  }
+}
+
+variable "lambda_memory_size_mb" {
+  description = "Memory allocated to the ingestion worker."
+  type        = number
+  default     = 2048
+
+  validation {
+    condition     = var.lambda_memory_size_mb >= 128 && var.lambda_memory_size_mb <= 10240
+    error_message = "lambda_memory_size_mb must be between 128 and 10240."
+  }
+}
+
+variable "max_document_size_bytes" {
+  description = "Largest source object that the ingestion worker accepts."
+  type        = number
+  default     = 104857600
+
+  validation {
+    condition     = var.max_document_size_bytes >= 1
+    error_message = "max_document_size_bytes must be positive."
+  }
+}
+
 variable "queue_visibility_timeout_seconds" {
   description = "Time an in-flight ingestion message remains hidden."
   type        = number
   default     = 1800
 
   validation {
-    condition     = var.queue_visibility_timeout_seconds >= 1
-    error_message = "queue_visibility_timeout_seconds must be positive."
+    condition     = var.queue_visibility_timeout_seconds >= 6 * var.lambda_timeout_seconds
+    error_message = "queue visibility must be at least six times the Lambda timeout."
+  }
+}
+
+variable "batch_size" {
+  description = "Maximum SQS records supplied to one Lambda invocation."
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.batch_size >= 1 && var.batch_size <= 10
+    error_message = "batch_size must be between 1 and 10."
   }
 }
 

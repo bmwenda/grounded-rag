@@ -2,6 +2,7 @@ from typing import Any
 
 from .config import Settings
 from .ingestion import DocumentIngestionService, create_ingestion_service
+from .runtime_secrets import load_ingestion_runtime_secrets
 from .s3_events import sqs_s3_object_created_events
 from .storage import create_s3_document_storage, s3_source_uri
 
@@ -32,6 +33,7 @@ def lambda_handler(
     _context: object | None = None,
 ) -> dict[str, Any]:
     """AWS Lambda entrypoint for SQS-delivered S3 object-created events."""
+    load_ingestion_runtime_secrets()
     settings = Settings.from_env()
     storage = create_s3_document_storage(
         bucket=settings.s3_source_bucket,

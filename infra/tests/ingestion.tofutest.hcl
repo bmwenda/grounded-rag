@@ -25,6 +25,30 @@ mock_provider "aws" {
     }
   }
 
+  mock_data "aws_partition" {
+    defaults = {
+      partition = "aws"
+    }
+  }
+
+  mock_data "aws_caller_identity" {
+    defaults = {
+      account_id = "123456789012"
+    }
+  }
+
+  mock_resource "aws_ecr_repository" {
+    defaults = {
+      repository_url = "123456789012.dkr.ecr.eu-west-1.amazonaws.com/simple-rag-ingestion"
+    }
+  }
+
+  mock_resource "aws_lambda_function" {
+    defaults = {
+      arn = "arn:aws:lambda:eu-west-1:123456789012:function:simple-rag-ingestion"
+    }
+  }
+
   mock_resource "aws_cloudwatch_log_group" {
     defaults = {
       arn = "arn:aws:logs:eu-west-1:123456789012:log-group:/aws/lambda/simple-rag-ingestion"
@@ -71,6 +95,73 @@ run "secure_ingestion_plan" {
   assert {
     condition     = aws_cloudwatch_log_group.ingestion.retention_in_days == 7
     error_message = "The default log retention must bound stored CloudWatch data."
+  }
+
+  assert {
+    condition     = length(aws_lambda_function.ingestion) == 0 && length(aws_lambda_event_source_mapping.ingestion) == 0
+    error_message = "The first apply must create ECR without requiring an image that has not been pushed."
+  }
+
+  assert {
+    condition     = aws_ecr_repository.ingestion.image_tag_mutability == "IMMUTABLE" && aws_ecr_repository.ingestion.image_scanning_configuration[0].scan_on_push
+    error_message = "ECR must use immutable tags and scan on push."
+  }
+
+  assert {
+    condition     = aws_ecr_repository.ingestion.encryption_configuration[0].encryption_type == "AES256"
+    error_message = "The ECR repository must use service-managed encryption."
+  }
+
+  assert {
+    condition     = jsondecode(aws_ecr_lifecycle_policy.ingestion.policy).rules[0].selection.tagStatus == "untagged"
+    error_message = "The lifecycle policy must expire stale untagged images."
+  }
+}
+
+run "deploy_image_digest" {
+  command = plan
+
+  variables {
+    image_digest       = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    runtime_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:ingestion-test"
+  }
+
+  assert {
+    condition     = aws_lambda_function.ingestion[0].package_type == "Image" && endswith(aws_lambda_function.ingestion[0].image_uri, "@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    error_message = "Lambda must deploy the selected immutable ECR digest."
+  }
+
+  assert {
+    condition     = aws_lambda_event_source_mapping.ingestion[0].event_source_arn == aws_sqs_queue.ingestion.arn && aws_lambda_event_source_mapping.ingestion[0].enabled
+    error_message = "The configured worker must consume the ingestion queue."
+  }
+
+  assert {
+    condition     = jsondecode(aws_ecr_repository_policy.ingestion.policy).Statement[0].Condition.ArnEquals["aws:SourceArn"] == "arn:aws:lambda:eu-west-1:123456789012:function:simple-rag-ingestion"
+    error_message = "ECR pull permissions must be scoped to the ingestion function."
+  }
+}
+
+run "reject_invalid_digest" {
+  command = plan
+
+  variables {
+    image_digest = "latest"
+  }
+
+  expect_failures = [var.image_digest]
+}
+
+run "hold_mapping_without_secret" {
+  command = plan
+
+  variables {
+    image_digest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+
+  assert {
+    condition     = !aws_lambda_event_source_mapping.ingestion[0].enabled
+    error_message = "The ingestion mapping must remain disabled until runtime credentials are configured."
   }
 }
 

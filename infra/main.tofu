@@ -1,6 +1,64 @@
 locals {
   source_object_arn = var.source_prefix == "" ? "${aws_s3_bucket.source.arn}/*" : "${aws_s3_bucket.source.arn}/${var.source_prefix}/*"
   source_prefixes   = var.source_prefix == "" ? ["*"] : [var.source_prefix, "${var.source_prefix}/*"]
+  function_arn      = "arn:${data.aws_partition.current.partition}:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.name}"
+}
+
+data "aws_partition" "current" {}
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_ecr_repository" "ingestion" {
+  name                 = var.name
+  image_tag_mutability = "IMMUTABLE"
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_lifecycle_policy" "ingestion" {
+  repository = aws_ecr_repository.ingestion.name
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Expire untagged images after 14 days"
+      selection = {
+        tagStatus   = "untagged"
+        countType   = "sinceImagePushed"
+        countUnit   = "days"
+        countNumber = 14
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
+
+resource "aws_ecr_repository_policy" "ingestion" {
+  repository = aws_ecr_repository.ingestion.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "LambdaECRImageRetrievalPolicy"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+      Action = ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"]
+      Condition = {
+        StringEquals = {
+          "aws:SourceAccount" = data.aws_caller_identity.current.account_id
+        }
+        ArnEquals = {
+          "aws:SourceArn" = local.function_arn
+        }
+      }
+    }]
+  })
 }
 
 resource "aws_s3_bucket" "source" {
@@ -137,10 +195,58 @@ data "aws_iam_policy_document" "ingestion" {
     ]
     resources = ["${aws_cloudwatch_log_group.ingestion.arn}:*"]
   }
+
+  dynamic "statement" {
+    for_each = var.runtime_secret_arn == null ? [] : [var.runtime_secret_arn]
+    content {
+      sid       = "ReadRuntimeSecret"
+      effect    = "Allow"
+      actions   = ["secretsmanager:GetSecretValue"]
+      resources = [statement.value]
+    }
+  }
 }
 
 resource "aws_iam_role_policy" "ingestion" {
   name   = "${var.name}-policy"
   role   = aws_iam_role.ingestion.id
   policy = data.aws_iam_policy_document.ingestion.json
+}
+
+resource "aws_lambda_function" "ingestion" {
+  count         = var.image_digest == null ? 0 : 1
+  function_name = var.name
+  description   = "Ingest S3 documents delivered through SQS"
+  role          = aws_iam_role.ingestion.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.ingestion.repository_url}@${var.image_digest}"
+  architectures = ["x86_64"]
+  memory_size   = var.lambda_memory_size_mb
+  timeout       = var.lambda_timeout_seconds
+
+  environment {
+    variables = merge(var.lambda_environment_variables, {
+      MAX_DOCUMENT_SIZE_BYTES = tostring(var.max_document_size_bytes)
+      S3_SOURCE_BUCKET        = aws_s3_bucket.source.id
+      S3_SOURCE_PREFIX        = var.source_prefix
+      }, var.runtime_secret_arn == null ? {} : {
+      INGESTION_RUNTIME_SECRET_ARN = var.runtime_secret_arn
+    })
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.ingestion,
+    aws_iam_role_policy.ingestion,
+    aws_ecr_repository_policy.ingestion,
+  ]
+}
+
+resource "aws_lambda_event_source_mapping" "ingestion" {
+  count            = var.image_digest == null ? 0 : 1
+  event_source_arn = aws_sqs_queue.ingestion.arn
+  function_name    = aws_lambda_function.ingestion[0].arn
+  batch_size       = var.batch_size
+  enabled          = var.runtime_secret_arn != null
+
+  depends_on = [aws_iam_role_policy.ingestion]
 }

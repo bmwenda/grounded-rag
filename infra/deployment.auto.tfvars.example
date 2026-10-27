@@ -1,5 +1,12 @@
 aws_region             = "eu-west-1"
 
+# Set these after the first apply creates ECR and the image has been pushed.
+# image_digest       = "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+# runtime_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:ingestion-example"
+
+# Non-secret overrides only; managed source settings are set by the module.
+# lambda_environment_variables = { CHROMA_COLLECTION = "rag-documents" }
+
 # Optional: use a fixed globally unique name instead of a generated bucket name.
 # source_bucket_name = "company-simple-rag-sources"
 
