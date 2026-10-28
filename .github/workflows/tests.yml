@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Build Linux x86_64 image
-        run: docker buildx build --platform linux/amd64 --provenance=false --load --tag simple-rag-ingestion:test .
+        run: docker buildx build --file Dockerfile.lambda --platform linux/amd64 --provenance=false --load --tag simple-rag-ingestion:test .
 
       - name: Verify handler and CPU PyTorch imports
         run: docker run --rm --platform linux/amd64 --entrypoint /var/lang/bin/python3.12 simple-rag-ingestion:test -c 'import torch; from src.s3_ingestion_handler import lambda_handler; assert not torch.cuda.is_available()'

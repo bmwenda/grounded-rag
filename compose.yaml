@@ -18,7 +18,6 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile.web
       target: runtime
     environment: &web_environment
       DATABASE_URL: postgresql+psycopg://rag:${LOCAL_POSTGRES_PASSWORD}@db:5432/simple_rag
@@ -64,7 +63,6 @@ services:
     profiles: [test]
     build:
       context: .
-      dockerfile: Dockerfile.web
       target: test
     environment:
       <<: *web_environment

@@ -29,10 +29,6 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 
 ## Installation
 
-For an Intel Mac or any host without local PostgreSQL and pgvector, use the
-[Docker development stack](docs/local-docker.md). It includes the browser/API,
-database, migrations, ingestion, tests, and a local smoke check.
-
 ### Prerequisites
 - Python 3.12
 - OpenAI API key
@@ -233,7 +229,44 @@ include numbered source references, with PDF page numbers when available. If
 no retrieved content meets the relevance threshold, the browser chat returns
 an explicit no-answer response.
 
-## Development
+## Local development
+
+### Docker stack
+
+The default `Dockerfile` builds the web/API image. `Dockerfile.lambda` builds
+the separate AWS Lambda image. Docker Desktop runs the app and pgvector without
+installing PostgreSQL on the host. If you do not already have `.env`, copy
+`.env.example` to `.env`; set `LOCAL_POSTGRES_PASSWORD` to a URL-safe value and
+`API_BEARER_TOKEN` to at least 32 characters. Compose reads `.env` from the
+repository root.
+
+```bash
+docker compose build web
+docker compose up -d db
+docker compose run --rm web alembic upgrade head
+docker compose up -d web
+docker compose exec web profile-admin owner@example.com
+docker compose exec web python -m scripts.local_stack_smoke
+docker compose exec web ingest-sources
+docker compose --profile test build test
+docker compose --profile test run --rm test
+docker compose logs --tail=100 web db
+docker compose --profile test down
+```
+
+The migration command uses Alembic directly because the local `db` command
+requires a loopback database host. The web app and ingestion use the same
+PostgreSQL database. The browser is at `http://127.0.0.1:8000` by default;
+`LOCAL_WEB_PORT` changes the host port. The `sources/` directory is mounted
+read-only. The smoke check uses test embeddings and removes its test document.
+Add a real `OPENAI_API_KEY` before real ingestion or chat. `down` stops the
+stack but keeps the database volume; add `--volumes` only to delete local data.
+
+For #86, Render's Git-backed Dockerfile service can build this default
+`Dockerfile` on repository updates. A service using a prebuilt image needs a
+separate deploy action after the image is published.
+
+### Python checks
 
 Run the complete local check suite:
 
