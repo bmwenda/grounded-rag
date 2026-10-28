@@ -2,6 +2,7 @@ import glob
 import json
 import logging
 import os
+from pathlib import Path
 
 # Docling imports optional transformer integrations. This keeps their optional-model
 # notices out of the CLI while conversion errors still propagate to ingestion.
@@ -20,6 +21,14 @@ def _load_file(file_path: str) -> list[Document]:
     """Load an allowed document with the maintained generic file loader."""
     if not is_supported_document(file_path):
         raise RuntimeError("Unsupported document type")
+    if Path(file_path).suffix.lower() == ".json":
+        content = json.loads(Path(file_path).read_text(encoding="utf-8-sig"))
+        return [
+            Document(
+                page_content=json.dumps(content, ensure_ascii=False, indent=2),
+                metadata={"source": file_path},
+            )
+        ]
     return DoclingLoader(file_path=file_path).load()
 
 

@@ -259,7 +259,7 @@ requires a loopback database host. The web app and ingestion use the same
 PostgreSQL database. The browser is at `http://127.0.0.1:8000` by default;
 `LOCAL_WEB_PORT` changes the host port. The `sources/` directory is mounted
 read-only. The smoke check uses test embeddings and removes its test document.
-Docling caches tokenizer downloads in a persistent Hugging Face volume; the
+Docling caches tokenizer and OCR models in persistent volumes; the
 unauthenticated HF Hub notice is a rate-limit warning. Add a real
 `OPENAI_API_KEY` before real ingestion or chat. `down` stops the stack but keeps
 the database and model-cache volumes; add `--volumes` only to delete local data

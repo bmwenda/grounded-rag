@@ -32,6 +32,7 @@ services:
     volumes:
       - ./sources:/app/sources:ro
       - hf-cache:/home/app/.cache
+      - rapidocr-cache:/opt/venv/lib/python3.12/site-packages/rapidocr/models
     ports:
       - "127.0.0.1:${LOCAL_WEB_PORT:-8000}:8000"
     healthcheck:
@@ -77,3 +78,4 @@ services:
 volumes:
   pgdata:
   hf-cache:
+  rapidocr-cache:
