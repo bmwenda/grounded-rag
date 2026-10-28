@@ -29,6 +29,10 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 
 ## Installation
 
+For an Intel Mac or any host without local PostgreSQL and pgvector, use the
+[Docker development stack](docs/local-docker.md). It includes the browser/API,
+database, migrations, ingestion, tests, and a local smoke check.
+
 ### Prerequisites
 - Python 3.12
 - OpenAI API key

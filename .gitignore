@@ -11,6 +11,7 @@ wheels/
 
 # Local credentials
 .env
+.env.docker
 
 # Local ingestion documents
 /sources/
