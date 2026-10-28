@@ -180,8 +180,7 @@ coordinated across workers, and verified against PostgreSQL.
   storage](https://github.com/bmwenda/simple-rag/issues/85) for ingestion and
   retrieval.
 - [ ] [Containerize the web app and local pgvector
-  stack](https://github.com/bmwenda/simple-rag/issues/89) before the hosted
-  demo.
+  stack](../README.md#local-development) before the hosted demo.
 - [ ] [Add pgvector health checks and recovery
   guidance](https://github.com/bmwenda/simple-rag/issues/34) for failed writes,
   stale versions, and restore operations.

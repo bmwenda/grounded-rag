@@ -1,5 +1,5 @@
 *
-!Dockerfile
+!Dockerfile.lambda
 !pyproject.toml
 !uv.lock
 !src/

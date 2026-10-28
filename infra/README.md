@@ -98,12 +98,13 @@ tofu -chdir=infra plan -out=deployment.tfplan
 tofu -chdir=infra apply deployment.tfplan
 ```
 
-Build a single-architecture image from the locked production dependencies.
-The Linux x86_64 resolution uses CPU-only PyTorch, and `.dockerignore` excludes
-local documents, credentials, and generated data.
+Build a single-architecture Lambda image from the locked production
+dependencies. The Linux x86_64 resolution uses CPU-only PyTorch, and
+`Dockerfile.lambda.dockerignore` excludes local documents, credentials, and
+generated data.
 
 ```bash
-docker buildx build --platform linux/amd64 --provenance=false --load \
+docker buildx build --file Dockerfile.lambda --platform linux/amd64 --provenance=false --load \
   --tag simple-rag-ingestion:local .
 ```
 
