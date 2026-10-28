@@ -19,8 +19,6 @@ class Settings:
     database_url: URL = field(repr=False)
     sources_directory: Path = DEFAULT_SOURCES_DIRECTORY
     embedding_model: str = "text-embedding-3-large"
-    chroma_collection: str = "rag-documents"
-    chroma_directory: Path = Path("chroma_db")
     retrieval_count: int = 4
     retrieval_relevance_threshold: float = 0.2
     chunk_size: int = 1000
@@ -43,8 +41,6 @@ class Settings:
             embedding_model=os.getenv(
                 "OPENAI_EMBEDDING_MODEL", "text-embedding-3-large"
             ),
-            chroma_collection=os.getenv("CHROMA_COLLECTION", "rag-documents"),
-            chroma_directory=Path(os.getenv("CHROMA_DIRECTORY", "chroma_db")),
             retrieval_count=_integer_env("RETRIEVAL_COUNT", 4),
             retrieval_relevance_threshold=_float_env(
                 "RETRIEVAL_RELEVANCE_THRESHOLD", 0.2

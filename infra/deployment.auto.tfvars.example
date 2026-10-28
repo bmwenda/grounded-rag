@@ -5,7 +5,6 @@ aws_region             = "eu-west-1"
 # runtime_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:ingestion-example"
 
 # Non-secret overrides only; managed source settings are set by the module.
-# lambda_environment_variables = { CHROMA_COLLECTION = "rag-documents" }
 
 # Optional: use a fixed globally unique name instead of a generated bucket name.
 # source_bucket_name = "company-simple-rag-sources"

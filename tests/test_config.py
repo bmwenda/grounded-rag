@@ -1,4 +1,3 @@
-from pathlib import Path
 
 import pytest
 from sqlalchemy.engine import URL
@@ -17,7 +16,6 @@ def test_settings_load_and_convert_environment(monkeypatch: pytest.MonkeyPatch) 
     )
     monkeypatch.setenv("RETRIEVAL_COUNT", "7")
     monkeypatch.setenv("RETRIEVAL_RELEVANCE_THRESHOLD", "0.65")
-    monkeypatch.setenv("CHROMA_DIRECTORY", "custom-db")
     monkeypatch.setenv("SOURCES_DIRECTORY", "local-documents")
     monkeypatch.setenv("S3_SOURCE_BUCKET", "source-bucket")
     monkeypatch.setenv("S3_SOURCE_PREFIX", "incoming")
@@ -32,7 +30,6 @@ def test_settings_load_and_convert_environment(monkeypatch: pytest.MonkeyPatch) 
     assert "secret" not in repr(settings)
     assert settings.retrieval_count == 7
     assert settings.retrieval_relevance_threshold == 0.65
-    assert settings.chroma_directory == Path("custom-db")
     assert settings.sources_directory == PROJECT_ROOT / "local-documents"
     assert settings.s3_source_bucket == "source-bucket"
     assert settings.s3_source_prefix == "incoming"

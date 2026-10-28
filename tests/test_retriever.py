@@ -1,4 +1,3 @@
-import warnings
 from typing import Any
 
 import pytest
@@ -112,32 +111,6 @@ def test_retrieve_documents_returns_empty_when_no_result_passes_threshold() -> N
         )
         == []
     )
-
-
-def test_retrieve_documents_hides_unhelpful_relevance_score_warning() -> None:
-    class WarningSearcher(FakeSearcher):
-        def similarity_search_with_relevance_scores(
-            self,
-            query: str,
-            k: int = 4,
-            **kwargs: Any,
-        ) -> list[tuple[Document, float]]:
-            warnings.warn(
-                "Relevance scores must be between 0 and 1, got document details",
-                UserWarning,
-            )
-            return super().similarity_search_with_relevance_scores(query, k, **kwargs)
-
-    with warnings.catch_warnings(record=True) as caught_warnings:
-        warnings.simplefilter("always")
-        chunks = retrieve_documents(
-            "question",
-            searcher=WarningSearcher([(document("Relevant"), 0.8)]),
-            settings=settings(),
-        )
-
-    assert len(chunks) == 1
-    assert caught_warnings == []
 
 
 def test_retrieve_documents_wraps_failures() -> None:

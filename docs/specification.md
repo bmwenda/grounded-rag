@@ -39,8 +39,9 @@ Each open delivery item links to its GitHub issue.
   Ingestion is idempotent for unchanged ready documents and retries failed
   vector writes, but it has no durable job queue, attempt history, or worker
   lease.
-- Chroma currently uses a local persistent directory. It is not configured as
-  a horizontally scalable production service.
+- PostgreSQL pgvector stores chunks and embeddings alongside the document
+  registry, using exact cosine search. Local and S3 ingestion share this store
+  with chat retrieval.
 - S3 ingestion checks the configured object-size limit before download and
   validates the configured bucket, prefix, and supported file extension.
   Upload URLs, document upload/status/deletion routes, production AWS
@@ -71,7 +72,7 @@ Each open delivery item links to its GitHub issue.
 local files -> ingest-sources ------------------------+
                                                      +-> ingestion service
 S3 source bucket -> SQS -> Lambda -------------------+       -> validate -> parse -> chunk
-                                                             -> embed -> Chroma + PostgreSQL registry
+                                                             -> embed -> PostgreSQL pgvector + registry
 
 browser -> FastAPI static chat + authenticated /v1 API -> chat service
                                                        -> retrieve -> grounded answer + citations
@@ -175,20 +176,12 @@ coordinated across workers, and verified against PostgreSQL.
 
 ### P1 — prepare vector storage for production use
 
-- [ ] [Document the supported Chroma topology, persistence, backup, restore,
-  and scaling limits](https://github.com/bmwenda/simple-rag/issues/31).
-- [ ] [Externalize Chroma connection, authentication, collection, and
-  persistence configuration](https://github.com/bmwenda/simple-rag/issues/32)
-  and validate it at startup.
-- [ ] [Version vector collections and embedding
-  models](https://github.com/bmwenda/simple-rag/issues/33) so re-embedding
-  does not mix incompatible vectors in the active collection.
-- [ ] [Add vector-store health checks and recovery
+- [ ] [Use PostgreSQL pgvector
+  storage](https://github.com/bmwenda/simple-rag/issues/85) for ingestion and
+  retrieval.
+- [ ] [Add pgvector health checks and recovery
   guidance](https://github.com/bmwenda/simple-rag/issues/34) for failed writes,
   stale versions, and restore operations.
-- [ ] [Set the evidence-based migration threshold for a hosted vector
-  service](https://github.com/bmwenda/simple-rag/issues/35) if Chroma cannot
-  meet availability, scale, or tenancy needs.
 
 Definition of done: operators can deploy, validate, back up, restore, and
 re-index the vector store within documented limits.
