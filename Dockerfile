@@ -35,9 +35,11 @@ COPY scripts/ scripts/
 COPY migrations/ migrations/
 COPY alembic.ini ./
 ENV PATH="/opt/venv/bin:${PATH}" PYTHONPATH=/app PYTHONDONTWRITEBYTECODE=1 PORT=10000
-RUN useradd --system --home-dir /app app \
-    && mkdir /app/sources \
-    && chown app:app /app/sources
+RUN useradd --system --create-home --home-dir /home/app app \
+    && mkdir -p /app/sources /home/app/.cache \
+    && chown app:app /app/sources /home/app /home/app/.cache
+ENV HOME=/home/app HF_HOME=/home/app/.cache/huggingface \
+    XDG_CACHE_HOME=/home/app/.cache
 USER app
 EXPOSE 10000
 CMD ["sh", "-c", "exec uvicorn src.api.main:app --host 0.0.0.0 --port \"${PORT:-10000}\""]
