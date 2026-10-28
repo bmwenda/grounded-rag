@@ -23,7 +23,7 @@ docker compose build web
 docker compose up -d db
 docker compose run --rm web alembic upgrade head
 docker compose up -d web
-docker compose exec web python -m src.profile_admin owner@example.com
+docker compose exec web profile-admin owner@example.com
 docker compose exec web python -m scripts.local_stack_smoke
 ```
 
@@ -39,7 +39,7 @@ For ordinary ingestion, put supported files in the ignored `sources/` directory
 and run:
 
 ```bash
-docker compose exec web python -m scripts.ingest_sources
+docker compose exec web ingest-sources
 ```
 
 The source directory is mounted read-only at `/app/sources`. The application

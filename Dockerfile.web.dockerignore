@@ -1,5 +1,6 @@
 *
 !Dockerfile.web
+!README.md
 !pyproject.toml
 !uv.lock
 !alembic.ini
