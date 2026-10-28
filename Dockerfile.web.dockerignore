@@ -1,0 +1,16 @@
+*
+!Dockerfile.web
+!pyproject.toml
+!uv.lock
+!alembic.ini
+!src/
+!src/**
+!scripts/
+!scripts/**
+!migrations/
+!migrations/**
+!tests/
+!tests/**
+**/__pycache__/
+**/*.pyc
+**/.env*
