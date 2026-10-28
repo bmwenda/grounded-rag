@@ -116,6 +116,43 @@ run "secure_ingestion_plan" {
     condition     = jsondecode(aws_ecr_lifecycle_policy.ingestion.policy).rules[0].selection.tagStatus == "untagged"
     error_message = "The lifecycle policy must expire stale untagged images."
   }
+
+  assert {
+    condition = length(aws_s3_bucket_notification.source.queue) == 17 && alltrue([
+      for rule in aws_s3_bucket_notification.source.queue :
+      rule.filter_prefix == "incoming/" && contains(local.supported_document_suffixes, rule.filter_suffix)
+    ])
+    error_message = "Only supported source documents must notify the ingestion queue."
+  }
+
+  assert {
+    condition = alltrue([
+      for rule in aws_s3_bucket_notification.source.queue :
+      rule.queue_arn == aws_sqs_queue.ingestion.arn && contains(rule.events, "s3:ObjectCreated:*")
+    ])
+    error_message = "Every supported source event must target the ingestion queue."
+  }
+
+  assert {
+    condition = alltrue([
+      jsondecode(aws_sqs_queue_policy.ingestion.policy).Statement[0].Action == "sqs:SendMessage",
+      jsondecode(aws_sqs_queue_policy.ingestion.policy).Statement[0].Resource == aws_sqs_queue.ingestion.arn,
+      jsondecode(aws_sqs_queue_policy.ingestion.policy).Statement[0].Principal.Service == "s3.amazonaws.com",
+      jsondecode(aws_sqs_queue_policy.ingestion.policy).Statement[0].Condition.ArnEquals["aws:SourceArn"] == aws_s3_bucket.source.arn,
+      jsondecode(aws_sqs_queue_policy.ingestion.policy).Statement[0].Condition.StringEquals["aws:SourceAccount"] == "123456789012",
+    ])
+    error_message = "Only the configured S3 source may publish to the ingestion queue."
+  }
+}
+
+run "reject_bucket_wide_notifications" {
+  command = plan
+
+  variables {
+    source_prefix = ""
+  }
+
+  expect_failures = [var.source_prefix]
 }
 
 run "deploy_image_digest" {

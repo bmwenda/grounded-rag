@@ -40,10 +40,11 @@ Configure a dead-letter queue and set the Lambda visibility timeout longer than
 the largest expected document ingestion time. The handler returns a compact
 status payload and never returns raw exception details.
 
-The baseline AWS resources are defined with OpenTofu under `infra/`. See the
+The AWS resources are defined with OpenTofu under `infra/`. See the
 [infrastructure guide](../infra/README.md) for inputs, validation, planning,
-and deployment. S3 object-created notification filters are tracked separately
-and are not part of the baseline module.
+and deployment. Its notification rules use a nonempty source prefix and
+case-sensitive lowercase suffix filters. Use lowercase extensions for uploaded
+objects, and write any derived objects outside the source prefix.
 
 ## Local verification
 
