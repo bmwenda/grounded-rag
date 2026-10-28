@@ -1,13 +1,12 @@
 import json
 from pathlib import Path
 
-from chromadb.api.types import validate_metadata
 from langchain_core.documents import Document
 
 from src import loader
 
 
-def test_docling_nested_metadata_is_preserved_and_accepted_by_chroma(
+def test_docling_nested_metadata_is_preserved_for_json_storage(
     monkeypatch,
 ) -> None:
     docling_metadata = {
@@ -31,7 +30,7 @@ def test_docling_nested_metadata_is_preserved_and_accepted_by_chroma(
     )
 
     metadata = chunks[0].metadata
-    validate_metadata(metadata)
+    json.dumps(metadata)
     assert json.loads(metadata["dl_meta"]) == docling_metadata
     assert metadata["document_id"] == "policy"
     assert metadata["source"] == "policies.txt"

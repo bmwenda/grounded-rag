@@ -12,8 +12,8 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 
 - **LangChain** - LLM framework for building RAG pipelines
 - **OpenAI Embeddings** - Semantic text embeddings for understanding document meaning
-- **Chroma** - Vector database for efficient document storage and retrieval
-- **SQLAlchemy** - ORM persistence for document identity and ingestion state
+- **PostgreSQL pgvector** - Shared vector and document storage for ingestion and chat
+- **SQLAlchemy** - ORM persistence for document identity, chunks, and ingestion state
 - **DoclingLoader** - Parses PDF, text, Markdown, HTML, Office, and other
   supported document formats
 - **RecursiveCharacterTextSplitter** - Intelligent document chunking with overlap
@@ -24,7 +24,7 @@ tasks are maintained in the [product and delivery specification](docs/specificat
    HTML, or Office files, in the `sources/` folder
 2. **Process & Chunk** - Documents are automatically split into overlapping chunks for better retrieval
 3. **Generate Embeddings** - Each chunk is converted into semantic embeddings using OpenAI
-4. **Store in Vector DB** - Embeddings are stored in Chroma for fast similarity search
+4. **Store in Vector DB** - Embeddings are stored in PostgreSQL pgvector
 5. **Retrieve & Query** - Search for relevant documents using natural language queries
 
 ## Installation
@@ -32,7 +32,7 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 ### Prerequisites
 - Python 3.12
 - OpenAI API key
-- PostgreSQL database for the document registry
+- PostgreSQL database with the pgvector extension available
 
 ### Steps
 
@@ -55,8 +55,14 @@ tasks are maintained in the [product and delivery specification](docs/specificat
    ```
 
    For local development, use a PostgreSQL role with permission to create
-   databases. See `.env.example` for optional embedding, Chroma, retrieval, and
+   databases. See `.env.example` for optional embedding, retrieval, and
    chunking settings.
+
+   The migration enables pgvector and creates `document_chunks`. It requires a
+   database role allowed to create the extension. The current schema uses
+   3,072-dimensional embeddings, matching `text-embedding-3-large`. Keep the
+   embedding model compatible with that dimension. Local ingestion, S3 ingestion,
+   and chat retrieval must use the same `DATABASE_URL`.
 
    Prepare the local database and apply pending schema migrations:
    ```bash
@@ -79,6 +85,29 @@ tasks are maintained in the [product and delivery specification](docs/specificat
    ```bash
    uv run ingest-sources
    ```
+
+### Vector storage capacity
+
+Neon Free currently provides [1 GB of PostgreSQL storage per project](https://neon.com/blog/neon-free-plan-1-gb-per-project).
+Before demo ingestion, check the current database and vector table sizes:
+
+```sql
+SELECT pg_size_pretty(pg_database_size(current_database())) AS database_size;
+SELECT count(*) AS chunks,
+       pg_size_pretty(pg_total_relation_size('document_chunks')) AS total_size
+FROM document_chunks;
+```
+
+The initial pgvector query uses exact cosine search without an approximate
+index. Its relevance score is cosine similarity clamped to 0–1; the default
+`RETRIEVAL_RELEVANCE_THRESHOLD=0.2` now applies to that scale. Benchmark
+latency and storage growth before increasing the demo corpus.
+
+For an isolated integration check, start a disposable pgvector PostgreSQL
+instance and set `PGVECTOR_TEST_DATABASE_URL` to its database URL. Then run
+`uv run pytest tests/test_vector_store.py`. The test applies migrations and
+checks insertion, search, replacement, and deletion. Use only a disposable
+database for this test.
 
 ## Usage
 

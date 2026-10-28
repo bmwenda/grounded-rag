@@ -35,10 +35,9 @@ resource policy permitting direct S3 invocation.
 
 The secret must be in the selected Region. The handler fetches it at invocation
 time using the Lambda execution role. Its ARN, but not its contents, is passed
-through OpenTofu. Supply a reachable PostgreSQL database and a suitable Chroma
-storage configuration before processing real documents; this module does not
-provision either service. Production vector storage is tracked separately in
-issues #31 and #32.
+through OpenTofu. Supply a reachable PostgreSQL database with the pgvector
+migration applied before processing real documents; this module does not
+provision the database.
 
 ## Cost defaults
 

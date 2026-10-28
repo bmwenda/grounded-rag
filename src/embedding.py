@@ -1,8 +1,8 @@
-from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from pydantic import SecretStr
 
 from .config import Settings
+from .vector_store import PgVectorStore
 
 
 def embeddings(settings: Settings | None = None) -> OpenAIEmbeddings:
@@ -13,13 +13,9 @@ def embeddings(settings: Settings | None = None) -> OpenAIEmbeddings:
     )
 
 
-def vector_store(settings: Settings | None = None) -> Chroma:
+def vector_store(settings: Settings | None = None) -> PgVectorStore:
     settings = settings or Settings.from_env()
-    return Chroma(
-        embedding_function=embeddings(settings),
-        collection_name=settings.chroma_collection,
-        persist_directory=str(settings.chroma_directory),
-    )
+    return PgVectorStore(settings.database_url, embeddings(settings))
 
 
 def save_documents(settings: Settings | None = None) -> list[str]:
