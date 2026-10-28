@@ -9,23 +9,22 @@ desktop OpenGL system packages.
 
 ## Configure and start
 
-Copy `.env.docker.example` to the ignored `.env.docker` file. Replace the
-local database password and bearer token with your own values. The password
-must be URL-safe because Compose constructs `DATABASE_URL` from it. The bearer
-token must have at least 32 characters. Add `OPENAI_API_KEY` when you want to
-ingest actual documents or generate chat answers. Keep `.env.docker` out of
-Git and never pass its contents into issue or PR comments.
+Use the repository's ignored `.env` file for both the application and Docker
+Compose. If you already have an `.env`, keep it and add `LOCAL_POSTGRES_PASSWORD`
+with a URL-safe value; otherwise copy `.env.example` to `.env` and fill in the
+values you need. Set `API_BEARER_TOKEN` to at least 32 characters. Add a real
+`OPENAI_API_KEY` when you want to ingest actual documents or generate chat
+answers. Compose reads `.env` automatically when run from the repository root.
 
 Run these commands from the repository root:
 
 ```bash
-cp .env.docker.example .env.docker
-docker compose --env-file .env.docker build web
-docker compose --env-file .env.docker up -d db
-docker compose --env-file .env.docker run --rm web alembic upgrade head
-docker compose --env-file .env.docker up -d web
-docker compose --env-file .env.docker exec web python -m src.profile_admin owner@example.com
-docker compose --env-file .env.docker exec web python -m scripts.local_stack_smoke
+docker compose build web
+docker compose up -d db
+docker compose run --rm web alembic upgrade head
+docker compose up -d web
+docker compose exec web python -m src.profile_admin owner@example.com
+docker compose exec web python -m scripts.local_stack_smoke
 ```
 
 The migration command uses Alembic directly because the local `db` CLI guards
@@ -40,12 +39,12 @@ For ordinary ingestion, put supported files in the ignored `sources/` directory
 and run:
 
 ```bash
-docker compose --env-file .env.docker exec web python -m scripts.ingest_sources
+docker compose exec web python -m scripts.ingest_sources
 ```
 
 The source directory is mounted read-only at `/app/sources`. The application
 uses the same PostgreSQL database for the document registry and vectors. Its
-browser/API also reads that database. Set a real OpenAI key in `.env.docker`
+browser/API also reads that database. Set a real OpenAI key in `.env`
 before this ingestion command or generating chat answers.
 
 ## Test and inspect
@@ -54,16 +53,16 @@ The optional test profile uses a separate temporary pgvector database, so its
 migration test cannot drop the web service's vector table:
 
 ```bash
-docker compose --env-file .env.docker --profile test build test
-docker compose --env-file .env.docker --profile test run --rm test
-docker compose --env-file .env.docker logs --tail=100 web db
-docker compose --env-file .env.docker ps
+docker compose --profile test build test
+docker compose --profile test run --rm test
+docker compose logs --tail=100 web db
+docker compose ps
 ```
 
 The browser JavaScript test skips in the Python test image because Node.js is
 not installed there; the repository CI runs it separately. To stop the stack
 while retaining the database volume, run
-`docker compose --env-file .env.docker --profile test down`. Add `--volumes`
+`docker compose --profile test down`. Add `--volumes`
 only when you intend to delete the local database contents.
 
 ## Render handoff
