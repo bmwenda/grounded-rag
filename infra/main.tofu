@@ -1,6 +1,13 @@
 locals {
-  source_object_arn = var.source_prefix == "" ? "${aws_s3_bucket.source.arn}/*" : "${aws_s3_bucket.source.arn}/${var.source_prefix}/*"
-  source_prefixes   = var.source_prefix == "" ? ["*"] : [var.source_prefix, "${var.source_prefix}/*"]
+  # Keep this list aligned with src/document_types.py. S3 suffix filters are
+  # case-sensitive; the worker remains the final document-type validator.
+  supported_document_suffixes = toset([
+    ".csv", ".docx", ".epub", ".html", ".htm", ".json", ".md",
+    ".odt", ".pdf", ".pptx", ".rtf", ".rst", ".tsv", ".txt",
+    ".xml", ".yaml", ".yml",
+  ])
+  source_object_arn = "${aws_s3_bucket.source.arn}/${var.source_prefix}/*"
+  source_prefixes   = [var.source_prefix, "${var.source_prefix}/*"]
   function_arn      = "arn:${data.aws_partition.current.partition}:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.name}"
 }
 
@@ -127,6 +134,47 @@ resource "aws_sqs_queue_redrive_allow_policy" "dead_letter" {
     redrivePermission = "byQueue"
     sourceQueueArns   = [aws_sqs_queue.ingestion.arn]
   })
+}
+
+resource "aws_sqs_queue_policy" "ingestion" {
+  queue_url = aws_sqs_queue.ingestion.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid      = "AllowSourceBucketNotifications"
+      Effect   = "Allow"
+      Action   = "sqs:SendMessage"
+      Resource = aws_sqs_queue.ingestion.arn
+      Principal = {
+        Service = "s3.amazonaws.com"
+      }
+      Condition = {
+        ArnEquals = {
+          "aws:SourceArn" = aws_s3_bucket.source.arn
+        }
+        StringEquals = {
+          "aws:SourceAccount" = data.aws_caller_identity.current.account_id
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_s3_bucket_notification" "source" {
+  bucket = aws_s3_bucket.source.id
+
+  dynamic "queue" {
+    for_each = local.supported_document_suffixes
+    content {
+      id            = "source-${trimprefix(queue.value, ".")}"
+      queue_arn     = aws_sqs_queue.ingestion.arn
+      events        = ["s3:ObjectCreated:*"]
+      filter_prefix = "${var.source_prefix}/"
+      filter_suffix = queue.value
+    }
+  }
+
+  depends_on = [aws_sqs_queue_policy.ingestion]
 }
 
 data "aws_iam_policy_document" "lambda_assume_role" {

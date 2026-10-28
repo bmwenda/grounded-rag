@@ -5,6 +5,8 @@ S3-to-SQS-to-Lambda ingestion path:
 
 - a private, encrypted S3 source bucket with opt-in versioning;
 - an encrypted SQS ingestion queue and encrypted dead-letter queue;
+- object-created notifications for supported lowercase document suffixes under
+  the configured source prefix, with a bucket- and account-scoped SQS policy;
 - a private ECR repository with immutable tags, basic scanning on push,
   service-managed encryption, and expiry of untagged images after 14 days;
 - a dedicated Lambda execution role limited to the source prefix, ingestion
@@ -16,10 +18,12 @@ The function uses an ECR image digest. The first apply creates the repository;
 after pushing an image, a second apply creates the function from its digest.
 When `runtime_secret_arn` is omitted, the SQS mapping is created disabled.
 
-The module deliberately does not create an S3 notification or grant S3
-permission to publish to the queue. Notification filters and the queue policy
-are tracked in issue #17. There is no Lambda resource policy permitting direct
-S3 invocation.
+The source prefix must be nonempty. Notifications cover only keys beneath that
+prefix, so worker outputs must be written outside it to avoid recursive events.
+S3 suffix filters are case-sensitive: uppercase extensions do not trigger a
+notification even though the worker's validator accepts them. Keep the suffix
+list in `main.tofu` aligned with `src/document_types.py`. There is no Lambda
+resource policy permitting direct S3 invocation.
 
 ## Prerequisites
 
@@ -77,7 +81,8 @@ tofu -chdir=infra test
 
 The OpenTofu test uses a mocked AWS provider. It verifies the plan without AWS
 credentials or resource creation, including public-access blocks, encryption,
-the ECR configuration, and the digest-pinned Lambda mapping. The GitHub
+the ECR configuration, notification rules, queue policy, and the digest-pinned
+Lambda mapping. The GitHub
 Actions image job builds the Linux x86_64 image and imports the handler and
 CPU PyTorch without AWS credentials.
 
@@ -123,8 +128,10 @@ Copy the reported `sha256:` digest into `image_digest` in the ignored tfvars
 file. Set `runtime_secret_arn` to the ARN of the prepared secret, then plan and
 apply again. The ECR pull policy allows only the named Lambda function to read
 this repository's image layers. OpenTofu will enable the SQS mapping when the
-secret ARN is present. The S3 notification and queue publish policy are
-separate work in issue #17.
+secret ARN is present. The source-bucket notification publishes matching object
+creation events to the ingestion queue after the scoped queue policy is in
+place. Existing bucket notifications, if any, must be imported or reconciled
+before apply because S3 has one notification configuration per bucket.
 
 To roll back, set `image_digest` to the earlier release's ECR digest and apply
 again. Keep that image tagged in ECR: Lambda periodically retrieves its image,

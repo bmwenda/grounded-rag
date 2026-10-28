@@ -22,13 +22,13 @@ variable "source_bucket_name" {
 }
 
 variable "source_prefix" {
-  description = "Optional object-key prefix accepted by the ingestion worker."
+  description = "Nonempty object-key prefix accepted by the ingestion worker and S3 notifications."
   type        = string
   default     = "incoming"
 
   validation {
-    condition     = !startswith(var.source_prefix, "/") && !endswith(var.source_prefix, "/")
-    error_message = "source_prefix must not start or end with a slash."
+    condition     = trimspace(var.source_prefix) != "" && !startswith(var.source_prefix, "/") && !endswith(var.source_prefix, "/")
+    error_message = "source_prefix must be nonempty and must not start or end with a slash."
   }
 }
 
