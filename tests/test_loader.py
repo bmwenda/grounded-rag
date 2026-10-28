@@ -106,6 +106,27 @@ def test_load_file_uses_generic_loader_for_markdown(
     assert calls == [str(source)]
 
 
+def test_load_file_preserves_structured_json_as_searchable_text(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "org-chart.json"
+    payload = {"company": "Aetheris", "teams": [{"name": "RAG"}]}
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    class UnexpectedLoader:
+        def __init__(self, **_kwargs: str) -> None:
+            raise AssertionError("JSON files should not use the generic Docling loader")
+
+    monkeypatch.setattr(loader, "DoclingLoader", UnexpectedLoader)
+
+    documents = loader._load_file(str(source))
+
+    assert len(documents) == 1
+    assert json.loads(documents[0].page_content) == payload
+    assert documents[0].metadata == {"source": str(source)}
+
+
 def test_load_file_rejects_unallowlisted_extensions(tmp_path: Path) -> None:
     source = tmp_path / "program.bin"
     source.write_bytes(b"not a document")
