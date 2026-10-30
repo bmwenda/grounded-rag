@@ -12,6 +12,7 @@ def get_chat_model(settings: Settings | None = None) -> ChatOpenAI:
     return ChatOpenAI(
         model=settings.openai_model,
         api_key=SecretStr(settings.openai_api_key),
+        base_url=settings.llm_base_url,
         max_retries=2,
         timeout=30,
     )

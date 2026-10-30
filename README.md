@@ -11,7 +11,7 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 ## Key Technologies
 
 - **LangChain** - LLM framework for building RAG pipelines
-- **OpenAI Embeddings** - Semantic text embeddings for understanding document meaning
+- **Embedding model** - Semantic text embeddings for understanding document meaning
 - **PostgreSQL pgvector** - Shared vector and document storage for ingestion and chat
 - **SQLAlchemy** - ORM persistence for document identity, chunks, and ingestion state
 - **DoclingLoader** - Parses PDF, text, Markdown, HTML, Office, and other
@@ -23,7 +23,7 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 1. **Load Documents** - Place supported documents, such as PDF, text, Markdown,
    HTML, or Office files, in the `sources/` folder
 2. **Process & Chunk** - Documents are automatically split into overlapping chunks for better retrieval
-3. **Generate Embeddings** - Each chunk is converted into semantic embeddings using OpenAI
+3. **Generate Embeddings** - Each chunk is converted into semantic embeddings using the configured embedding model
 4. **Store in Vector DB** - Embeddings are stored in PostgreSQL pgvector
 5. **Retrieve & Query** - Search for relevant documents using natural language queries
 
@@ -32,12 +32,13 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 ### Prerequisites
 
 - Python 3.12
-- OpenAI API key
+- LLM API credentials
 - PostgreSQL database with the pgvector extension available
 - AWS S3, SQS, and Lambda for the AWS ingestion pipeline (local ingestion also works)
 
-The web app and database can run on any compatible host. The current model
-integration uses OpenAI; hosting providers are your choice.
+The web app and database can run on any compatible host. Model endpoints must
+support the OpenAI-compatible chat and embeddings APIs;
+hosting providers are your choice.
 
 ### Steps
 
@@ -54,8 +55,8 @@ integration uses OpenAI; hosting providers are your choice.
 3. **Set up environment variables:**
    Create a `.env` file in the project root:
    ```
-   OPENAI_API_KEY=your-api-key-here
-   OPENAI_MODEL=gpt-4-turbo
+   LLM_API_KEY=your-api-key-here
+   LLM_MODEL=gpt-4-turbo
    DATABASE_URL=postgresql+psycopg://rag_user:change_me@localhost:5432/simple_rag
    ```
 
@@ -141,7 +142,7 @@ inspect the migration version, run `uv run alembic current`.
 
 Before ingestion, the registry connects to PostgreSQL and checks that its
 document table has the expected columns. To probe database connectivity without
-an OpenAI key, run
+a model API key, run
 `uv run python healthcheck.py`; it exits nonzero if the database query fails.
 
 ### Profile and chat API
@@ -177,7 +178,7 @@ Send the token as `Authorization: Bearer <token>` to `/v1/users/me` and
 `/v1/chats`. The first owner can update their email and name through
 `GET`, `PATCH`, and `DELETE /v1/users/me`. Create a chat with
 `POST /v1/chats` and a JSON body such as `{"content": "What is the policy?"}`.
-Chat creation waits for an answer and requires the configured OpenAI model,
+Chat creation waits for an answer and requires the configured chat model,
 embedding key, and indexed documents. `GET /v1/chats` lists chats with optional
 `status`, `cursor`, and `limit` query parameters; `GET`, `PATCH`, and `DELETE`
 `/v1/chats/{id}` manage one chat. Deletion hides it immediately and records a
@@ -266,7 +267,7 @@ PostgreSQL database. The browser is at `http://127.0.0.1:8000` by default;
 read-only. The smoke check uses test embeddings and removes its test document.
 Docling caches tokenizer and OCR models in persistent volumes; the
 unauthenticated HF Hub notice is a rate-limit warning. Add a real
-`OPENAI_API_KEY` before real ingestion or chat. `down` stops the stack but keeps
+`LLM_API_KEY` before real ingestion or chat. `down` stops the stack but keeps
 the database and model-cache volumes; add `--volumes` only to delete local data
 and cached models.
 
@@ -279,11 +280,22 @@ host's secret management:
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection URI; preserve the database's required TLS parameters |
-| `OPENAI_API_KEY` | API key for embeddings and generation |
-| `OPENAI_MODEL` | Chat model available to your account |
+| `LLM_API_KEY` | API key for the configured model endpoint |
+| `LLM_MODEL` | Chat model served by your endpoint |
 | `API_BEARER_TOKEN` | Random login token of at least 32 characters |
-| `OPENAI_EMBEDDING_MODEL` | Optional; defaults to `text-embedding-3-large` (3,072 dimensions) |
+| `EMBEDDING_MODEL` | Optional; defaults to `text-embedding-3-large` (3,072 dimensions) |
 | `PORT` | Container HTTP port; defaults to `10000` |
+
+Set `LLM_BASE_URL` to your provider's OpenAI-compatible API endpoint. Embeddings
+can use a separate `EMBEDDING_BASE_URL` and `EMBEDDING_API_KEY`; otherwise they
+use the chat endpoint and key. Set `EMBEDDING_MODEL` to a compatible embedding
+model. The existing schema requires 3,072 dimensions; changing dimensions needs
+a schema migration and re-ingestion. Without custom URLs, the clients use their
+default OpenAI endpoints. Native APIs with other protocols need an adapter.
+
+Existing `OPENAI_API_KEY`, `OPENAI_MODEL`, and `OPENAI_EMBEDDING_MODEL` settings
+remain supported as fallbacks; the new names take precedence. Lambda runtime
+secrets accept both naming schemes and the optional endpoint settings.
 
 Use the same database and embedding model for ingestion and retrieval. See
 `.env.example` for optional settings. Keep credentials outside Git and serve
@@ -309,10 +321,6 @@ secret as described in [AWS infrastructure](infra/README.md). Schedule
 [chat retention](docs/chat-retention.md) independently of the web process.
 Monitor database capacity and back up application data and source documents
 using your chosen provider's tools or PostgreSQL exports.
-
-[Render and Neon](docs/render-neon.md) are an optional low-cost deployment
-example, not required services. `render.yaml` is a sample Blueprint for that
-example; adapt its service name, region, and configuration to your deployment.
 
 ## Verification
 

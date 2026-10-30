@@ -9,9 +9,9 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
-      - key: OPENAI_API_KEY
+      - key: LLM_API_KEY
         sync: false
-      - key: OPENAI_MODEL
+      - key: LLM_MODEL
         sync: false
       - key: API_BEARER_TOKEN
         generateValue: true

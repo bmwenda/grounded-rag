@@ -18,6 +18,9 @@ class Settings:
     openai_model: str
     database_url: URL = field(repr=False)
     sources_directory: Path = DEFAULT_SOURCES_DIRECTORY
+    llm_base_url: str | None = None
+    embedding_base_url: str | None = None
+    embedding_api_key: str | None = field(default=None, repr=False)
     embedding_model: str = "text-embedding-3-large"
     retrieval_count: int = 4
     retrieval_relevance_threshold: float = 0.2
@@ -34,12 +37,17 @@ class Settings:
     def from_env(cls) -> "Settings":
         load_dotenv()
         settings = cls(
-            openai_api_key=_required_env("OPENAI_API_KEY"),
-            openai_model=_required_env("OPENAI_MODEL"),
+            openai_api_key=_model_env("LLM_API_KEY", "OPENAI_API_KEY"),
+            openai_model=_model_env("LLM_MODEL", "OPENAI_MODEL"),
             database_url=database_url_from_env(),
             sources_directory=sources_directory_from_env(),
-            embedding_model=os.getenv(
-                "OPENAI_EMBEDDING_MODEL", "text-embedding-3-large"
+            llm_base_url=_optional_env("LLM_BASE_URL"),
+            embedding_base_url=_optional_env("EMBEDDING_BASE_URL"),
+            embedding_api_key=_optional_env("EMBEDDING_API_KEY"),
+            embedding_model=(
+                os.getenv("EMBEDDING_MODEL")
+                or os.getenv("OPENAI_EMBEDDING_MODEL")
+                or "text-embedding-3-large"
             ),
             retrieval_count=_integer_env("RETRIEVAL_COUNT", 4),
             retrieval_relevance_threshold=_float_env(
@@ -121,3 +129,10 @@ def _float_env(name: str, default: float) -> float:
         return float(raw_value)
     except ValueError as exc:
         raise ConfigurationError(f"{name} must be a number") from exc
+
+
+def _model_env(name: str, legacy: str) -> str:
+    value = os.getenv(name) or os.getenv(legacy)
+    if not value:
+        raise ConfigurationError(f"Missing required environment variable: {name}")
+    return value

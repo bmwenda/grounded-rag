@@ -30,8 +30,8 @@ resource policy permitting direct S3 invocation.
 - OpenTofu 1.9 or newer;
 - Docker with Buildx and AWS CLI v2 for image build and push;
 - AWS credentials supplied through the standard AWS credential chain;
-- an existing Secrets Manager JSON secret containing `OPENAI_API_KEY`,
-  `OPENAI_MODEL`, and `DATABASE_URL` before enabling ingestion.
+- an existing Secrets Manager JSON secret containing `LLM_API_KEY`,
+  `LLM_MODEL`, and `DATABASE_URL` before enabling ingestion.
 
 The secret must be in the selected Region. The handler fetches it at invocation
 time using the Lambda execution role. Its ARN, but not its contents, is passed
