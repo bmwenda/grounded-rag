@@ -22,6 +22,7 @@ services:
     environment: &web_environment
       DATABASE_URL: postgresql+psycopg://rag:${LOCAL_POSTGRES_PASSWORD}@db:5432/simple_rag
       API_BEARER_TOKEN: ${API_BEARER_TOKEN:?Set API_BEARER_TOKEN}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-gpt-4.1-mini}
       LLM_BASE_URL: ${LLM_BASE_URL:-}

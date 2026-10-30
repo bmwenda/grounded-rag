@@ -18,6 +18,7 @@ class Settings:
     llm_model: str
     database_url: URL = field(repr=False)
     sources_directory: Path = DEFAULT_SOURCES_DIRECTORY
+    llm_provider: str = "openai"
     llm_base_url: str | None = None
     embedding_base_url: str | None = None
     embedding_api_key: str | None = field(default=None, repr=False)
@@ -37,10 +38,11 @@ class Settings:
     def from_env(cls) -> "Settings":
         load_dotenv()
         settings = cls(
-            llm_api_key=_required_env("LLM_API_KEY"),
+            llm_api_key=os.getenv("LLM_API_KEY", ""),
             llm_model=_required_env("LLM_MODEL"),
             database_url=database_url_from_env(),
             sources_directory=sources_directory_from_env(),
+            llm_provider=os.getenv("LLM_PROVIDER", "openai"),
             llm_base_url=_optional_env("LLM_BASE_URL"),
             embedding_base_url=_optional_env("EMBEDDING_BASE_URL"),
             embedding_api_key=_optional_env("EMBEDDING_API_KEY"),
@@ -64,6 +66,12 @@ class Settings:
         return settings
 
     def validate(self) -> None:
+        if self.llm_provider not in {"openai", "anthropic", "ollama"}:
+            raise ConfigurationError("LLM_PROVIDER must be openai, anthropic, or ollama")
+        if self.llm_provider != "ollama" and not self.llm_api_key:
+            raise ConfigurationError("LLM_API_KEY is required for this provider")
+        if self.llm_provider != "openai" and not self.embedding_api_key:
+            raise ConfigurationError("EMBEDDING_API_KEY is required for this provider")
         if self.retrieval_count < 1:
             raise ConfigurationError("RETRIEVAL_COUNT must be at least 1")
         if not 0 <= self.retrieval_relevance_threshold <= 1:

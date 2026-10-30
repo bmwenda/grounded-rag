@@ -17,7 +17,9 @@ class FakeSecretsClient:
         return {"SecretString": self.secret_string}
 
 
-def test_runtime_secrets_populate_required_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_runtime_secrets_populate_required_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     client = FakeSecretsClient(
         json.dumps(
             {
@@ -66,3 +68,29 @@ def test_runtime_secrets_accept_generic_names(monkeypatch: pytest.MonkeyPatch) -
     load_ingestion_runtime_secrets()
     for key, value in values.items():
         assert os.environ[key] == value
+
+
+@pytest.mark.parametrize("provider", ["anthropic", "ollama", "invalid"])
+def test_native_provider_secret_requirements(
+    monkeypatch: pytest.MonkeyPatch,
+    provider: str,
+) -> None:
+    values = {
+        "LLM_PROVIDER": provider,
+        "LLM_MODEL": "test-model",
+        "DATABASE_URL": "postgresql://localhost/test",
+        "EMBEDDING_API_KEY": "embedding-key",
+    }
+    client = FakeSecretsClient(json.dumps(values))
+    monkeypatch.setenv("INGESTION_RUNTIME_SECRET_ARN", "arn:aws:secretsmanager:test")
+    monkeypatch.setattr("src.runtime_secrets.boto3.client", lambda _: client)
+    for key in values:
+        monkeypatch.delenv(key, raising=False)
+    if provider == "ollama":
+        load_ingestion_runtime_secrets()
+        assert os.environ["LLM_PROVIDER"] == "ollama"
+    else:
+        with pytest.raises(
+            ConfigurationError, match="Invalid ingestion runtime secret"
+        ):
+            load_ingestion_runtime_secrets()
