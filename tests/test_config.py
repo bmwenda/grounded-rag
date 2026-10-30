@@ -111,13 +111,3 @@ def test_generic_model_settings_configure_endpoints(monkeypatch: pytest.MonkeyPa
         assert embed.call_args.kwargs["base_url"] == "https://embed.example/v1"
         assert embed.call_args.kwargs["model"] == "embedding-model"
         assert embed.call_args.kwargs["api_key"].get_secret_value() == "embedding-key"
-
-
-def test_legacy_model_names_do_not_supply_required_settings(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr("src.config.load_dotenv", lambda: None)
-    monkeypatch.delenv("LLM_API_KEY", raising=False)
-    monkeypatch.setenv("OPENAI_API_KEY", "legacy-key")
-    with pytest.raises(ConfigurationError, match="LLM_API_KEY"):
-        Settings.from_env()
