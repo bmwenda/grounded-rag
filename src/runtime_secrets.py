@@ -7,11 +7,6 @@ import boto3  # type: ignore[import-untyped]
 
 from .domain import ConfigurationError
 
-SECRET_ALIASES = {
-    "LLM_API_KEY": "OPENAI_API_KEY",
-    "LLM_MODEL": "OPENAI_MODEL",
-    "EMBEDDING_MODEL": "OPENAI_EMBEDDING_MODEL",
-}
 REQUIRED_SECRET_KEYS = ("LLM_API_KEY", "LLM_MODEL", "DATABASE_URL")
 OPTIONAL_SECRET_KEYS = (
     "LLM_BASE_URL",
@@ -32,9 +27,6 @@ def load_ingestion_runtime_secrets() -> None:
         values = json.loads(response["SecretString"])
         if not isinstance(values, dict):
             raise TypeError("invalid secret object")
-        for name, legacy in SECRET_ALIASES.items():
-            if not values.get(name) and values.get(legacy):
-                values[name] = values[legacy]
         if any(
             not isinstance(values.get(key), str) or not values[key]
             for key in REQUIRED_SECRET_KEYS
@@ -43,7 +35,7 @@ def load_ingestion_runtime_secrets() -> None:
     except (KeyError, TypeError, ValueError) as exc:
         raise ConfigurationError("Invalid ingestion runtime secret") from exc
 
-    for key in (*REQUIRED_SECRET_KEYS, *OPTIONAL_SECRET_KEYS, *SECRET_ALIASES.values()):
+    for key in (*REQUIRED_SECRET_KEYS, *OPTIONAL_SECRET_KEYS):
         if key in values:
             if not isinstance(values[key], str):
                 raise ConfigurationError("Invalid ingestion runtime secret")

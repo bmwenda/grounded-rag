@@ -100,8 +100,8 @@ def test_pgvector_migration_ingestion_retrieval_replacement_and_deletion() -> No
             "leave",
             searcher=store,
             settings=Settings(
-                openai_api_key="test-key",
-                openai_model="test-model",
+                llm_api_key="test-key",
+                llm_model="test-model",
                 database_url=database_url,
                 retrieval_relevance_threshold=0.2,
             ),
