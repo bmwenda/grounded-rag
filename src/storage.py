@@ -104,7 +104,7 @@ class S3DocumentStorage:
         bucket, key = _parse_s3_uri(reference)
         source = self.get_object(bucket, key)
         suffix = Path(source.key).suffix.lower()
-        with TemporaryDirectory(prefix="simple-rag-ingestion-") as directory:
+        with TemporaryDirectory(prefix="grounded-rag-ingestion-") as directory:
             path = Path(directory) / f"source{suffix}"
             self.download_to(source, path)
             yield PreparedSource(

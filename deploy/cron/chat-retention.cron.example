@@ -1,3 +1,3 @@
 # Install with `crontab -e` for the application service account.
 # Update both absolute paths for the production host.
-17 */6 * * * cd /srv/simple-rag && /usr/local/bin/uv run --frozen chat-retention
+17 */6 * * * cd /srv/grounded-rag && /usr/local/bin/uv run --frozen chat-retention

@@ -17,7 +17,7 @@ S3_SOURCE_BUCKET=company-rag-sources
 S3_SOURCE_PREFIX=incoming
 AWS_REGION=eu-west-1
 MAX_DOCUMENT_SIZE_BYTES=104857600
-DATABASE_URL=postgresql+psycopg://rag_user:change_me@db-host:5432/simple_rag
+DATABASE_URL=postgresql+psycopg://rag_user:change_me@db-host:5432/grounded_rag
 ```
 
 `S3_SOURCE_PREFIX` may be empty to allow the whole bucket. The execution role

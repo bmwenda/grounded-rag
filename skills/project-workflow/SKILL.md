@@ -5,7 +5,7 @@ description: Execute the repository's issue-driven GitHub Project workflow from 
 
 # Project workflow
 
-Use this skill when the user selects a GitHub issue from the Simple RAG project
+Use this skill when the user selects a GitHub issue from the Grounded RAG project
 board and provides its link, or asks for an ad hoc change without an existing
 issue. The issue is the source of truth for scope and acceptance criteria; do
 not start implementation without an issue number.
@@ -28,7 +28,7 @@ for clarification before making changes.
 
 ## 2. Update project status
 
-Confirm that the issue belongs to the linked Simple RAG project. Move its
+Confirm that the issue belongs to the linked Grounded RAG project. Move its
 project item to `In Progress` before implementation. Use the project item and
 Status field rather than changing unrelated issue labels. If the status field
 or project item cannot be found, report the blocker instead of silently

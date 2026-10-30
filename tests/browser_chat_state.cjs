@@ -31,8 +31,8 @@ function element() {
 async function run(savedChatId, startNewChat = false, scenario = {}) {
   const nodes = new Map();
   const entries = new Map();
-  if (scenario.token !== false) entries.set('simple-rag-token', 'test-token');
-  if (savedChatId !== null) entries.set('simple-rag-chat-id', String(savedChatId));
+  if (scenario.token !== false) entries.set('grounded-rag-token', 'test-token');
+  if (savedChatId !== null) entries.set('grounded-rag-chat-id', String(savedChatId));
   const requests = [];
   const payloads = [];
   const documentEvents = new Map();
@@ -129,11 +129,11 @@ function chatAction(nodes, index) {
   const restored = await run(2);
   assert(restored.requests.includes('POST /v1/chats/2/messages'));
   assert(!restored.requests.includes('POST /v1/chats'));
-  assert.equal(restored.entries.get('simple-rag-chat-id'), '2');
+  assert.equal(restored.entries.get('grounded-rag-chat-id'), '2');
 
   const fresh = await run(null);
   assert(fresh.requests.includes('POST /v1/chats'));
-  assert.equal(fresh.entries.get('simple-rag-chat-id'), '2');
+  assert.equal(fresh.entries.get('grounded-rag-chat-id'), '2');
 
   const emptyChat = await run(null, false, { send: false });
   const welcome = emptyChat.nodes.get('message-list').children[0];
@@ -156,7 +156,7 @@ function chatAction(nodes, index) {
   assert(loggedIn.nodes.get('auth-view').classList.contains('hidden'));
   loggedIn.nodes.get('sign-out').on_click();
   assert(loggedIn.nodes.get('app-shell').classList.contains('logged-out'));
-  assert.equal(loggedIn.entries.has('simple-rag-token'), false);
+  assert.equal(loggedIn.entries.has('grounded-rag-token'), false);
 
   const managed = await run(2, false, { send: false });
   const activeMenu = chatMenu(managed.nodes);
@@ -214,7 +214,7 @@ function chatAction(nodes, index) {
   const foreignSelection = await run(9, false, { send: false });
   assert(foreignSelection.requests.includes('GET /v1/chats/9'));
   assert.equal(foreignSelection.nodes.get('chat-heading').textContent, 'New chat');
-  assert.equal(foreignSelection.entries.has('simple-rag-chat-id'), false);
+  assert.equal(foreignSelection.entries.has('grounded-rag-chat-id'), false);
 
   const failedList = await run(null, false, { send: false, failListOnce: true });
   const failure = failedList.nodes.get('chat-list').children[0];

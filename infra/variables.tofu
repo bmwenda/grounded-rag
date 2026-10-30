@@ -6,7 +6,7 @@ variable "aws_region" {
 variable "name" {
   description = "Base name used for the ingestion resources."
   type        = string
-  default     = "simple-rag-ingestion"
+  default     = "grounded-rag-ingestion"
 
   validation {
     condition     = can(regex("^[a-z0-9][a-z0-9-]{1,41}[a-z0-9]$", var.name))
@@ -178,7 +178,7 @@ variable "tags" {
   description = "Tags applied to all supported AWS resources."
   type        = map(string)
   default = {
-    Application = "simple-rag"
+    Application = "grounded-rag"
     ManagedBy   = "opentofu"
   }
 }

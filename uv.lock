@@ -3610,7 +3610,7 @@ wheels = [
 ]
 
 [[package]]
-name = "simple-rag"
+name = "grounded-rag"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

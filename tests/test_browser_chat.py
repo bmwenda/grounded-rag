@@ -19,7 +19,7 @@ def test_chat_page_and_assets_are_served() -> None:
     assert 'id="auth-form"' in page.text
     assert 'id="composer-form"' in page.text
     assert 'class="app-shell logged-out"' in page.text
-    assert "Log in to Simple RAG" in page.text
+    assert "Log in to Grounded RAG" in page.text
     assert "Company knowledge" in page.text
     assert "Log out" in page.text
     assert "Disconnect" not in page.text

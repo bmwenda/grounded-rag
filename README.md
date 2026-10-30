@@ -1,12 +1,30 @@
-## Description
+# Grounded RAG
 
-This is a simple Retrieval-Augmented Generation (RAG) application for searching
-an organization's knowledge base through an authenticated browser chat. It
-combines document ingestion, embedding, and retrieval to provide source-backed
-answers.
+**Your organization's documents. Answers you can trace.**
 
-The implemented capabilities, deployment constraints, and remaining delivery
-tasks are maintained in the [product and delivery specification](docs/specification.md).
+Grounded RAG turns company knowledge into an authenticated, conversational
+workspace. Ask questions in plain language and get answers grounded in indexed
+documents, with numbered citations you can inspect. When retrieval finds no
+relevant evidence, it explicitly says: “The available documents do not contain
+that information.” The answer pipeline rejects missing or unknown citations to keep source
+references verifiable.
+
+- **Check the source:** citations identify the document and page or chunk behind
+  an answer.
+- **Choose your chat model:** native OpenAI-compatible, Anthropic, and Ollama
+  support, including open-weight models hosted through Ollama.
+- **Bring your documents:** ingest PDFs, text, Markdown, HTML, Office files,
+  and other supported formats locally or through S3 → SQS → Lambda.
+- **Keep knowledge current:** checksum-based ingestion skips unchanged files
+  and replaces indexed chunks when a document changes.
+- **Continue the conversation:** browser chat supports follow-up questions,
+  saved history, renaming, and archiving.
+- **Deploy on your terms:** PostgreSQL with pgvector shares durable document,
+  vector, and chat storage across ingestion and the web app. Choose your own
+  compatible web and database hosts.
+
+See the [product and delivery specification](docs/specification.md) for
+implemented capabilities and planned work.
 
 ## Key Technologies
 
@@ -44,7 +62,8 @@ hosting providers are your choice.
 
 1. **Clone the repository and navigate to the project:**
    ```bash
-   cd simple-rag
+   git clone https://github.com/bmwenda/grounded-rag.git
+   cd grounded-rag
    ```
 
 2. **Install dependencies using uv:**
@@ -57,7 +76,7 @@ hosting providers are your choice.
    ```
    LLM_API_KEY=your-api-key-here
    LLM_MODEL=gpt-4-turbo
-   DATABASE_URL=postgresql+psycopg://rag_user:change_me@localhost:5432/simple_rag
+   DATABASE_URL=postgresql+psycopg://rag_user:change_me@localhost:5432/grounded_rag
    ```
 
    For local development, use a PostgreSQL role with permission to create
@@ -354,3 +373,20 @@ Run an individual check:
 ```bash
 uv run pytest tests/test_retriever.py
 ```
+
+## Upgrading from simple-rag
+
+The project is now `grounded-rag`. Update your Git remote to
+`https://github.com/bmwenda/grounded-rag.git` and reinstall with `uv sync`.
+The Python modules and CLI commands retain their existing interfaces.
+
+Keep existing database URLs unchanged; a database rename is not required.
+For an existing Compose database volume, set `LOCAL_POSTGRES_DB=simple_rag`
+in your ignored `.env` before restarting with the new configuration. New stacks
+default to `grounded_rag`. Browser session keys changed, so log in again.
+
+Before applying infrastructure changes to an existing installation, explicitly
+set `name = "simple-rag-ingestion"` in your ignored tfvars to retain its AWS
+resource names. New installations default to `grounded-rag-ingestion`.
+Review the OpenTofu plan for replacements; branding alone does not require
+recreating buckets, queues, Lambda functions, or ECR repositories.
