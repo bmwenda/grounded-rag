@@ -30,9 +30,14 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 ## Installation
 
 ### Prerequisites
+
 - Python 3.12
 - OpenAI API key
 - PostgreSQL database with the pgvector extension available
+- AWS S3, SQS, and Lambda for the AWS ingestion pipeline (local ingestion also works)
+
+The web app and database can run on any compatible host. The current model
+integration uses OpenAI; hosting providers are your choice.
 
 ### Steps
 
@@ -88,8 +93,8 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 
 ### Vector storage capacity
 
-Neon Free currently provides [1 GB of PostgreSQL storage per project](https://neon.com/blog/neon-free-plan-1-gb-per-project).
-Before demo ingestion, check the current database and vector table sizes:
+Size your database for documents, embeddings, and chat history. Check database
+and vector table sizes before increasing the corpus:
 
 ```sql
 SELECT pg_size_pretty(pg_database_size(current_database())) AS database_size;
@@ -265,12 +270,51 @@ unauthenticated HF Hub notice is a rate-limit warning. Add a real
 the database and model-cache volumes; add `--volumes` only to delete local data
 and cached models.
 
-For #86, Render's Git-backed Dockerfile service can build this default
-`Dockerfile` on repository updates. A service using a prebuilt image needs a
-separate deploy action after the image is published.
+## Deployment
 
-See the [Render and Neon deployment runbook](docs/render-neon.md) for secrets,
-migrations, AWS smoke testing, usage, backups, and teardown.
+Run the web image on any container host, or run Uvicorn directly. Provide
+PostgreSQL with pgvector and configure these environment variables through your
+host's secret management:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection URI; preserve the database's required TLS parameters |
+| `OPENAI_API_KEY` | API key for embeddings and generation |
+| `OPENAI_MODEL` | Chat model available to your account |
+| `API_BEARER_TOKEN` | Random login token of at least 32 characters |
+| `OPENAI_EMBEDDING_MODEL` | Optional; defaults to `text-embedding-3-large` (3,072 dimensions) |
+| `PORT` | Container HTTP port; defaults to `10000` |
+
+Use the same database and embedding model for ingestion and retrieval. See
+`.env.example` for optional settings. Keep credentials outside Git and serve
+the app over HTTPS through your host or reverse proxy.
+
+For an existing database, apply migrations and provision the owner before
+serving traffic:
+
+```bash
+uv run alembic upgrade head
+uv run alembic current
+uv run profile-admin owner@example.com
+```
+
+These commands use `DATABASE_URL`. Migrations require permission to enable
+pgvector, unless an administrator has already enabled it. Repeat `upgrade head`
+when deploying schema changes; the owner command provisions application data
+without a separate seed fixture. In the web image, run these commands without
+`uv run`. The image starts Uvicorn on `0.0.0.0:$PORT`.
+
+For AWS ingestion, configure the bucket, prefix, queue, Lambda image, and runtime
+secret as described in [AWS infrastructure](infra/README.md). Schedule
+[chat retention](docs/chat-retention.md) independently of the web process.
+Monitor database capacity and back up application data and source documents
+using your chosen provider's tools or PostgreSQL exports.
+
+[Render and Neon](docs/render-neon.md) are an optional low-cost deployment
+example, not required services. `render.yaml` is a sample Blueprint for that
+example; adapt its service name, region, and configuration to your deployment.
+
+## Verification
 
 ### Python checks
 
