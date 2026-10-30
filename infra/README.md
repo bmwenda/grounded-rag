@@ -144,3 +144,9 @@ OpenTofu state can contain infrastructure identifiers and should be stored in
 an access-controlled remote backend before shared or production deployment.
 Backend selection is environment-specific and intentionally not embedded in
 this module.
+
+For native chat providers, runtime secrets also accept `LLM_PROVIDER`
+(`openai`, `anthropic`, or `ollama`). Ollama needs no `LLM_API_KEY`; non-OpenAI
+chat providers require `EMBEDDING_API_KEY` for the independent OpenAI-compatible
+embedding service. Optional endpoint settings are `LLM_BASE_URL` and
+`EMBEDDING_BASE_URL`. The embedding model must match the database dimensions.

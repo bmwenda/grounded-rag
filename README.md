@@ -36,8 +36,8 @@ tasks are maintained in the [product and delivery specification](docs/specificat
 - PostgreSQL database with the pgvector extension available
 - AWS S3, SQS, and Lambda for the AWS ingestion pipeline (local ingestion also works)
 
-The web app and database can run on any compatible host. Model endpoints must
-support the OpenAI-compatible chat and embeddings APIs;
+The web app and database can run on any compatible host. Chat supports OpenAI-compatible APIs, Anthropic, and Ollama; embeddings use
+an OpenAI-compatible endpoint;
 hosting providers are your choice.
 
 ### Steps
@@ -286,12 +286,28 @@ host's secret management:
 | `EMBEDDING_MODEL` | Optional; defaults to `text-embedding-3-large` (3,072 dimensions) |
 | `PORT` | Container HTTP port; defaults to `10000` |
 
-Set `LLM_BASE_URL` to your provider's OpenAI-compatible API endpoint. Embeddings
-can use a separate `EMBEDDING_BASE_URL` and `EMBEDDING_API_KEY`; otherwise they
-use the chat endpoint and key. Set `EMBEDDING_MODEL` to a compatible embedding
-model. The existing schema requires 3,072 dimensions; changing dimensions needs
-a schema migration and re-ingestion. Without custom URLs, the clients use their
-default OpenAI endpoints. Native APIs with other protocols need an adapter.
+Select `LLM_PROVIDER=openai` (default), `anthropic`, or `ollama`. The selected
+provider uses its native chat API. Set `LLM_MODEL` to a model served by that
+provider and `LLM_BASE_URL` to an optional custom endpoint.
+
+| Provider | Chat configuration |
+| --- | --- |
+| OpenAI-compatible | `LLM_PROVIDER=openai`, `LLM_MODEL`, `LLM_API_KEY`; optional `LLM_BASE_URL` |
+| Anthropic | `LLM_PROVIDER=anthropic`, `LLM_MODEL`, `LLM_API_KEY` with an Anthropic key |
+| Ollama | `LLM_PROVIDER=ollama`, `LLM_MODEL=llama3.2`; no chat key required; endpoint defaults to `http://localhost:11434` |
+
+For open-weight chat, install Ollama separately, run `ollama pull llama3.2`, and
+start its server. The app does not download or host model weights. In containers,
+configure a reachable Ollama endpoint rather than container-local localhost.
+
+Embeddings use an independent OpenAI-compatible service. For Anthropic or
+Ollama chat, set `EMBEDDING_API_KEY` and optionally `EMBEDDING_BASE_URL`;
+chat credentials and endpoints are not reused. For OpenAI-compatible chat,
+embeddings default to the chat key and endpoint unless overridden.
+Set `EMBEDDING_MODEL` to a model returning 3,072 dimensions, as required by the
+current schema. Changing dimensions requires a migration and re-ingestion.
+The default embedding endpoint and model remain OpenAI's. Other native chat
+protocols need an adapter.
 
 Lambda runtime secrets use the same generic setting names and accept the
 optional endpoint settings.
