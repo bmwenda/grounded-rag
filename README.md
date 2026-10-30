@@ -269,6 +269,9 @@ For #86, Render's Git-backed Dockerfile service can build this default
 `Dockerfile` on repository updates. A service using a prebuilt image needs a
 separate deploy action after the image is published.
 
+See the [Render and Neon deployment runbook](docs/render-neon.md) for secrets,
+migrations, AWS smoke testing, usage, backups, and teardown.
+
 ### Python checks
 
 Run the complete local check suite:
