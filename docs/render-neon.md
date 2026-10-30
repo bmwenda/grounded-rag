@@ -1,4 +1,8 @@
-# Render and Neon demo runbook
+# Optional example: Render and Neon
+
+This is one low-cost hosting configuration, chosen for a demonstration. Neither
+provider is required: any compatible web host and PostgreSQL/pgvector database
+can be used. Start with the [general deployment instructions](../README.md#deployment).
 
 ## Deploy and configure
 
@@ -141,11 +145,3 @@ For AWS teardown, follow `infra/README.md`, review an OpenTofu destroy plan with
 the same variable file, and resolve nonempty S3/ECR resources deliberately. Remove
 unused secrets and verify billing afterward. Deleting Render or Neon does not
 remove AWS resources or stop Lambda retries.
-
-## Verification record
-
-On 2026-10-30 the owner reported Neon pgvector enabled, Alembic migrations run,
-and the Render browser app working. The AWS ingestion smoke test remains
-pending while the replacement Lambda image builds. The earlier worker failed
-with Chroma initialization errors; the replacement's Neon connectivity and
-end-to-end retrieval are not yet verified.
