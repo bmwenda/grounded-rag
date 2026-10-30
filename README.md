@@ -373,20 +373,3 @@ Run an individual check:
 ```bash
 uv run pytest tests/test_retriever.py
 ```
-
-## Upgrading from simple-rag
-
-The project is now `grounded-rag`. Update your Git remote to
-`https://github.com/bmwenda/grounded-rag.git` and reinstall with `uv sync`.
-The Python modules and CLI commands retain their existing interfaces.
-
-Keep existing database URLs unchanged; a database rename is not required.
-For an existing Compose database volume, set `LOCAL_POSTGRES_DB=simple_rag`
-in your ignored `.env` before restarting with the new configuration. New stacks
-default to `grounded_rag`. Browser session keys changed, so log in again.
-
-Before applying infrastructure changes to an existing installation, explicitly
-set `name = "simple-rag-ingestion"` in your ignored tfvars to retain its AWS
-resource names. New installations default to `grounded-rag-ingestion`.
-Review the OpenTofu plan for replacements; branding alone does not require
-recreating buckets, queues, Lambda functions, or ECR repositories.
