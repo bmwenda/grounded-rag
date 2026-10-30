@@ -61,8 +61,8 @@ def main() -> None:
         assert json.load(response)["email"] == owner.email
 
     settings = Settings(
-        openai_api_key="smoke-test-only",
-        openai_model="smoke-test-only",
+        llm_api_key="smoke-test-only",
+        llm_model="smoke-test-only",
         database_url=database_url,
     )
     store = PgVectorStore(database_url, SmokeEmbeddings())

@@ -21,24 +21,24 @@ def test_runtime_secrets_populate_required_settings(monkeypatch: pytest.MonkeyPa
     client = FakeSecretsClient(
         json.dumps(
             {
-                "OPENAI_API_KEY": "test-key",
-                "OPENAI_MODEL": "test-model",
+                "LLM_API_KEY": "test-key",
+                "LLM_MODEL": "test-model",
                 "DATABASE_URL": "postgresql+psycopg://localhost/test",
             }
         )
     )
     monkeypatch.setenv("INGESTION_RUNTIME_SECRET_ARN", "arn:aws:secretsmanager:test")
-    for key in ("OPENAI_API_KEY", "OPENAI_MODEL", "DATABASE_URL"):
+    for key in ("LLM_API_KEY", "LLM_MODEL", "DATABASE_URL"):
         monkeypatch.setenv(key, "")
     monkeypatch.setattr("src.runtime_secrets.boto3.client", lambda _: client)
 
     load_ingestion_runtime_secrets()
 
     assert client.requested_arn == "arn:aws:secretsmanager:test"
-    assert os.environ["OPENAI_MODEL"] == "test-model"
+    assert os.environ["LLM_MODEL"] == "test-model"
 
 
-@pytest.mark.parametrize("secret_string", ['{"OPENAI_API_KEY":"key"}', "not-json"])
+@pytest.mark.parametrize("secret_string", ['{"LLM_API_KEY":"key"}', "not-json"])
 def test_runtime_secrets_reject_malformed_secret(
     monkeypatch: pytest.MonkeyPatch, secret_string: str
 ) -> None:

@@ -22,8 +22,12 @@ services:
     environment: &web_environment
       DATABASE_URL: postgresql+psycopg://rag:${LOCAL_POSTGRES_PASSWORD}@db:5432/simple_rag
       API_BEARER_TOKEN: ${API_BEARER_TOKEN:?Set API_BEARER_TOKEN}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4.1-mini}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-large}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
       SOURCES_DIRECTORY: /app/sources
       PORT: 8000
     depends_on:

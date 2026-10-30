@@ -293,9 +293,8 @@ model. The existing schema requires 3,072 dimensions; changing dimensions needs
 a schema migration and re-ingestion. Without custom URLs, the clients use their
 default OpenAI endpoints. Native APIs with other protocols need an adapter.
 
-Existing `OPENAI_API_KEY`, `OPENAI_MODEL`, and `OPENAI_EMBEDDING_MODEL` settings
-remain supported as fallbacks; the new names take precedence. Lambda runtime
-secrets accept both naming schemes and the optional endpoint settings.
+Lambda runtime secrets use the same generic setting names and accept the
+optional endpoint settings.
 
 Use the same database and embedding model for ingestion and retrieval. See
 `.env.example` for optional settings. Keep credentials outside Git and serve

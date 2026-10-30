@@ -54,8 +54,8 @@ def make_s3_service(
     max_document_size_bytes: int = 1000,
 ) -> tuple[DocumentIngestionService, FakeDocumentRegistry, S3DocumentStorage]:
     settings = Settings(
-        openai_api_key="test-key",
-        openai_model="test-model",
+        llm_api_key="test-key",
+        llm_model="test-model",
         database_url=URL.create("postgresql+psycopg", database="test"),
         chunk_size=20,
         chunk_overlap=0,

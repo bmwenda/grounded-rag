@@ -8,7 +8,7 @@ from .vector_store import PgVectorStore
 def embeddings(settings: Settings | None = None) -> OpenAIEmbeddings:
     settings = settings or Settings.from_env()
     return OpenAIEmbeddings(
-        api_key=SecretStr(settings.embedding_api_key or settings.openai_api_key),
+        api_key=SecretStr(settings.embedding_api_key or settings.llm_api_key),
         base_url=settings.embedding_base_url or settings.llm_base_url,
         model=settings.embedding_model,
     )

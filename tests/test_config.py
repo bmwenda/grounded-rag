@@ -9,8 +9,8 @@ TEST_DATABASE_URL = URL.create("postgresql+psycopg", database="test")
 
 
 def test_settings_load_and_convert_environment(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-    monkeypatch.setenv("OPENAI_MODEL", "test-model")
+    monkeypatch.setenv("LLM_API_KEY", "test-key")
+    monkeypatch.setenv("LLM_MODEL", "test-model")
     monkeypatch.setenv(
         "DATABASE_URL", "postgresql://app:secret@localhost:5432/simple_rag"
     )
@@ -23,8 +23,8 @@ def test_settings_load_and_convert_environment(monkeypatch: pytest.MonkeyPatch) 
 
     settings = Settings.from_env()
 
-    assert settings.openai_api_key == "test-key"
-    assert settings.openai_model == "test-model"
+    assert settings.llm_api_key == "test-key"
+    assert settings.llm_model == "test-model"
     assert settings.database_url.drivername == "postgresql+psycopg"
     assert settings.database_url.database == "simple_rag"
     assert "secret" not in repr(settings)
@@ -38,8 +38,8 @@ def test_settings_load_and_convert_environment(monkeypatch: pytest.MonkeyPatch) 
 
 def test_settings_reject_invalid_chunk_overlap() -> None:
     settings = Settings(
-        openai_api_key="test-key",
-        openai_model="test-model",
+        llm_api_key="test-key",
+        llm_model="test-model",
         database_url=TEST_DATABASE_URL,
         chunk_size=100,
         chunk_overlap=100,
@@ -51,8 +51,8 @@ def test_settings_reject_invalid_chunk_overlap() -> None:
 
 def test_settings_reject_invalid_relevance_threshold() -> None:
     settings = Settings(
-        openai_api_key="test-key",
-        openai_model="test-model",
+        llm_api_key="test-key",
+        llm_model="test-model",
         database_url=TEST_DATABASE_URL,
         retrieval_relevance_threshold=1.1,
     )
@@ -63,8 +63,8 @@ def test_settings_reject_invalid_relevance_threshold() -> None:
 
 def test_settings_reject_invalid_ingestion_configuration() -> None:
     settings = Settings(
-        openai_api_key="test-key",
-        openai_model="test-model",
+        llm_api_key="test-key",
+        llm_model="test-model",
         database_url=TEST_DATABASE_URL,
         embedding_batch_size=0,
     )
@@ -76,8 +76,8 @@ def test_settings_reject_invalid_ingestion_configuration() -> None:
 def test_settings_reject_non_integer_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-    monkeypatch.setenv("OPENAI_MODEL", "test-model")
+    monkeypatch.setenv("LLM_API_KEY", "test-key")
+    monkeypatch.setenv("LLM_MODEL", "test-model")
     monkeypatch.setenv("DATABASE_URL", "postgresql://localhost/test")
     monkeypatch.setenv("RETRIEVAL_COUNT", "many")
 
@@ -85,20 +85,18 @@ def test_settings_reject_non_integer_environment(
         Settings.from_env()
 
 
-def test_generic_model_settings_override_legacy(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_generic_model_settings_configure_endpoints(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("src.config.load_dotenv", lambda: None)
     monkeypatch.setenv("LLM_API_KEY", "provider-key")
     monkeypatch.setenv("LLM_MODEL", "provider-model")
-    monkeypatch.setenv("OPENAI_API_KEY", "legacy-key")
-    monkeypatch.setenv("OPENAI_MODEL", "legacy-model")
     monkeypatch.setenv("DATABASE_URL", "postgresql://localhost/test")
     monkeypatch.setenv("LLM_BASE_URL", "https://chat.example/v1")
     monkeypatch.setenv("EMBEDDING_BASE_URL", "https://embed.example/v1")
     monkeypatch.setenv("EMBEDDING_API_KEY", "embedding-key")
     monkeypatch.setenv("EMBEDDING_MODEL", "embedding-model")
     settings = Settings.from_env()
-    assert settings.openai_api_key == "provider-key"
-    assert settings.openai_model == "provider-model"
+    assert settings.llm_api_key == "provider-key"
+    assert settings.llm_model == "provider-model"
     from unittest.mock import patch
 
     from src.embedding import embeddings
@@ -113,3 +111,13 @@ def test_generic_model_settings_override_legacy(monkeypatch: pytest.MonkeyPatch)
         assert embed.call_args.kwargs["base_url"] == "https://embed.example/v1"
         assert embed.call_args.kwargs["model"] == "embedding-model"
         assert embed.call_args.kwargs["api_key"].get_secret_value() == "embedding-key"
+
+
+def test_legacy_model_names_do_not_supply_required_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("src.config.load_dotenv", lambda: None)
+    monkeypatch.delenv("LLM_API_KEY", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "legacy-key")
+    with pytest.raises(ConfigurationError, match="LLM_API_KEY"):
+        Settings.from_env()

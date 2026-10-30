@@ -70,7 +70,7 @@ variable "lambda_environment_variables" {
   validation {
     condition = alltrue([
       for name in keys(var.lambda_environment_variables) :
-      !contains(["API_BEARER_TOKEN", "DATABASE_URL", "OPENAI_API_KEY", "LLM_API_KEY", "EMBEDDING_API_KEY", "INGESTION_RUNTIME_SECRET_ARN", "MAX_DOCUMENT_SIZE_BYTES", "S3_SOURCE_BUCKET", "S3_SOURCE_PREFIX"], upper(name))
+      !contains(["API_BEARER_TOKEN", "DATABASE_URL", "LLM_API_KEY", "EMBEDDING_API_KEY", "INGESTION_RUNTIME_SECRET_ARN", "MAX_DOCUMENT_SIZE_BYTES", "S3_SOURCE_BUCKET", "S3_SOURCE_PREFIX"], upper(name))
     ])
     error_message = "Secrets and managed ingestion settings cannot be supplied through lambda_environment_variables."
   }
