@@ -83,3 +83,33 @@ def test_settings_reject_non_integer_environment(
 
     with pytest.raises(ConfigurationError, match="RETRIEVAL_COUNT must be an integer"):
         Settings.from_env()
+
+
+def test_generic_model_settings_override_legacy(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("src.config.load_dotenv", lambda: None)
+    monkeypatch.setenv("LLM_API_KEY", "provider-key")
+    monkeypatch.setenv("LLM_MODEL", "provider-model")
+    monkeypatch.setenv("OPENAI_API_KEY", "legacy-key")
+    monkeypatch.setenv("OPENAI_MODEL", "legacy-model")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://localhost/test")
+    monkeypatch.setenv("LLM_BASE_URL", "https://chat.example/v1")
+    monkeypatch.setenv("EMBEDDING_BASE_URL", "https://embed.example/v1")
+    monkeypatch.setenv("EMBEDDING_API_KEY", "embedding-key")
+    monkeypatch.setenv("EMBEDDING_MODEL", "embedding-model")
+    settings = Settings.from_env()
+    assert settings.openai_api_key == "provider-key"
+    assert settings.openai_model == "provider-model"
+    from unittest.mock import patch
+
+    from src.embedding import embeddings
+    from src.model import get_chat_model
+
+    with patch("src.model.ChatOpenAI") as chat:
+        get_chat_model(settings)
+        assert chat.call_args.kwargs["base_url"] == "https://chat.example/v1"
+        assert chat.call_args.kwargs["model"] == "provider-model"
+    with patch("src.embedding.OpenAIEmbeddings") as embed:
+        embeddings(settings)
+        assert embed.call_args.kwargs["base_url"] == "https://embed.example/v1"
+        assert embed.call_args.kwargs["model"] == "embedding-model"
+        assert embed.call_args.kwargs["api_key"].get_secret_value() == "embedding-key"
