@@ -1,6 +1,6 @@
 ---
 name: issue-writing
-description: Write or review GitHub issues for the Simple RAG repository so they contain the context and acceptance criteria needed for implementation.
+description: Write or review GitHub issues for the Grounded RAG repository so they contain the context and acceptance criteria needed for implementation.
 ---
 
 # Issue writing

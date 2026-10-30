@@ -7,7 +7,7 @@ aws_region             = "eu-west-1"
 # Non-secret overrides only; managed source settings are set by the module.
 
 # Optional: use a fixed globally unique name instead of a generated bucket name.
-# source_bucket_name = "company-simple-rag-sources"
+# source_bucket_name = "company-grounded-rag-sources"
 
 # Optional: prior object versions consume S3 storage and are disabled by default.
 # enable_source_bucket_versioning = true

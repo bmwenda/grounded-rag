@@ -101,7 +101,7 @@ documentation is not enabled for the production app. Copied answer content
 after source-document deletion remains part of the broader privacy decision in
 issue #48.
 
-Related backlog: [HTTP API #36](https://github.com/bmwenda/simple-rag/issues/36),
-[chat persistence #40](https://github.com/bmwenda/simple-rag/issues/40),
-[audit events #46](https://github.com/bmwenda/simple-rag/issues/46), and
-[retention #47](https://github.com/bmwenda/simple-rag/issues/47).
+Related backlog: [HTTP API #36](https://github.com/bmwenda/grounded-rag/issues/36),
+[chat persistence #40](https://github.com/bmwenda/grounded-rag/issues/40),
+[audit events #46](https://github.com/bmwenda/grounded-rag/issues/46), and
+[retention #47](https://github.com/bmwenda/grounded-rag/issues/47).

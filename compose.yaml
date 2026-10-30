@@ -3,10 +3,10 @@ services:
     image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: rag
-      POSTGRES_DB: simple_rag
+      POSTGRES_DB: ${LOCAL_POSTGRES_DB:-grounded_rag}
       POSTGRES_PASSWORD: ${LOCAL_POSTGRES_PASSWORD:?Set LOCAL_POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rag -d simple_rag"]
+      test: ["CMD-SHELL", "pg_isready -U rag -d ${LOCAL_POSTGRES_DB:-grounded_rag}"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -20,7 +20,7 @@ services:
       context: .
       target: runtime
     environment: &web_environment
-      DATABASE_URL: postgresql+psycopg://rag:${LOCAL_POSTGRES_PASSWORD}@db:5432/simple_rag
+      DATABASE_URL: postgresql+psycopg://rag:${LOCAL_POSTGRES_PASSWORD}@db:5432/${LOCAL_POSTGRES_DB:-grounded_rag}
       API_BEARER_TOKEN: ${API_BEARER_TOKEN:?Set API_BEARER_TOKEN}
       LLM_PROVIDER: ${LLM_PROVIDER:-openai}
       LLM_API_KEY: ${LLM_API_KEY:-}
@@ -56,10 +56,10 @@ services:
     image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: rag
-      POSTGRES_DB: simple_rag_test
+      POSTGRES_DB: grounded_rag_test
       POSTGRES_PASSWORD: ${LOCAL_POSTGRES_PASSWORD:?Set LOCAL_POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rag -d simple_rag_test"]
+      test: ["CMD-SHELL", "pg_isready -U rag -d grounded_rag_test"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -73,8 +73,8 @@ services:
       target: test
     environment:
       <<: *web_environment
-      DATABASE_URL: postgresql+psycopg://rag:${LOCAL_POSTGRES_PASSWORD}@db-test:5432/simple_rag_test
-      PGVECTOR_TEST_DATABASE_URL: postgresql+psycopg://rag:${LOCAL_POSTGRES_PASSWORD}@db-test:5432/simple_rag_test
+      DATABASE_URL: postgresql+psycopg://rag:${LOCAL_POSTGRES_PASSWORD}@db-test:5432/grounded_rag_test
+      PGVECTOR_TEST_DATABASE_URL: postgresql+psycopg://rag:${LOCAL_POSTGRES_PASSWORD}@db-test:5432/grounded_rag_test
     depends_on:
       db-test:
         condition: service_healthy

@@ -12,7 +12,7 @@ def test_settings_load_and_convert_environment(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setenv("LLM_API_KEY", "test-key")
     monkeypatch.setenv("LLM_MODEL", "test-model")
     monkeypatch.setenv(
-        "DATABASE_URL", "postgresql://app:secret@localhost:5432/simple_rag"
+        "DATABASE_URL", "postgresql://app:secret@localhost:5432/grounded_rag"
     )
     monkeypatch.setenv("RETRIEVAL_COUNT", "7")
     monkeypatch.setenv("RETRIEVAL_RELEVANCE_THRESHOLD", "0.65")
@@ -26,7 +26,7 @@ def test_settings_load_and_convert_environment(monkeypatch: pytest.MonkeyPatch) 
     assert settings.llm_api_key == "test-key"
     assert settings.llm_model == "test-model"
     assert settings.database_url.drivername == "postgresql+psycopg"
-    assert settings.database_url.database == "simple_rag"
+    assert settings.database_url.database == "grounded_rag"
     assert "secret" not in repr(settings)
     assert settings.retrieval_count == 7
     assert settings.retrieval_relevance_threshold == 0.65

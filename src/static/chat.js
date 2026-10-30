@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const $ = (id) => document.getElementById(id);
-  const state = { token: sessionStorage.getItem("simple-rag-token") || "", chatId: null,
+  const state = { token: sessionStorage.getItem("grounded-rag-token") || "", chatId: null,
     chats: [], nextChatCursor: null, filter: "active", busy: false, requestId: 0,
     listRequestId: 0, listLoading: false, listError: null, listAppend: false,
     renamingChatId: null, renameDraft: "" };
@@ -30,8 +30,8 @@
     $("menu-toggle").setAttribute("aria-expanded", "false");
   }
   function disconnect(message) {
-    sessionStorage.removeItem("simple-rag-token");
-    sessionStorage.removeItem("simple-rag-chat-id");
+    sessionStorage.removeItem("grounded-rag-token");
+    sessionStorage.removeItem("grounded-rag-chat-id");
     state.token = "";
     state.chatId = null;
     state.chats = [];
@@ -292,7 +292,7 @@
   function selectChat(chat) {
     if (state.busy) return;
     state.chatId = chat.id;
-    sessionStorage.setItem("simple-rag-chat-id", String(chat.id));
+    sessionStorage.setItem("grounded-rag-chat-id", String(chat.id));
     $("chat-heading").textContent = chat.title;
     $("question").disabled = chat.status === "archived";
     $("question").placeholder = chat.status === "archived" ? "Archived chat · reactivate it to ask" : "Ask a follow-up question…";
@@ -303,7 +303,7 @@
     if (state.busy) return;
     state.requestId++;
     state.chatId = null;
-    sessionStorage.removeItem("simple-rag-chat-id");
+    sessionStorage.removeItem("grounded-rag-chat-id");
     if (state.filter !== "active") {
       state.filter = "active";
       state.chats = [];
@@ -321,9 +321,9 @@
     $("auth-error").classList.add("hidden");
     try {
       const profile = await api("/users/me");
-      sessionStorage.setItem("simple-rag-token", state.token);
+      sessionStorage.setItem("grounded-rag-token", state.token);
       $("profile-name").textContent = profile.first_name || profile.email;
-      const savedChatId = Number(sessionStorage.getItem("simple-rag-chat-id"));
+      const savedChatId = Number(sessionStorage.getItem("grounded-rag-chat-id"));
       $("auth-view").classList.add("hidden");
       $("chat-view").classList.remove("hidden");
       $("app-shell").classList.remove("logged-out");
@@ -372,7 +372,7 @@
       $("question").value = "";
       if (chatId === null) {
         state.chatId = result.chat.id;
-        sessionStorage.setItem("simple-rag-chat-id", String(result.chat.id));
+        sessionStorage.setItem("grounded-rag-chat-id", String(result.chat.id));
         $("chat-heading").textContent = result.chat.title;
         $("message-list").replaceChildren();
       }

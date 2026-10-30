@@ -41,7 +41,7 @@ runs at 17 minutes past every sixth hour. Update the absolute checkout and
 `uv` paths for the host before installing it with `crontab -e`:
 
 ```cron
-17 */6 * * * cd /srv/simple-rag && /usr/local/bin/uv run --frozen chat-retention
+17 */6 * * * cd /srv/grounded-rag && /usr/local/bin/uv run --frozen chat-retention
 ```
 
 Load `DATABASE_URL` and optional retention settings through the service

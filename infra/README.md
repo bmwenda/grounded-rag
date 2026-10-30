@@ -105,7 +105,7 @@ generated data.
 
 ```bash
 docker buildx build --file Dockerfile.lambda --platform linux/amd64 --provenance=false --load \
-  --tag simple-rag-ingestion:local .
+  --tag grounded-rag-ingestion:local .
 ```
 
 Authenticate and push with an immutable tag such as the Git commit ID. Set
@@ -117,7 +117,7 @@ AWS_REGION=eu-west-1
 IMAGE_TAG=$(git rev-parse --short=12 HEAD)
 aws ecr get-login-password --region "$AWS_REGION" |
   docker login --username AWS --password-stdin "${REPOSITORY_URL%%/*}"
-docker tag simple-rag-ingestion:local "$REPOSITORY_URL:$IMAGE_TAG"
+docker tag grounded-rag-ingestion:local "$REPOSITORY_URL:$IMAGE_TAG"
 docker push "$REPOSITORY_URL:$IMAGE_TAG"
 aws ecr describe-images --region "$AWS_REGION" \
   --repository-name "${REPOSITORY_URL#*/}" --image-ids imageTag="$IMAGE_TAG" \

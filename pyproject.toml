@@ -1,7 +1,7 @@
 [project]
-name = "simple-rag"
+name = "grounded-rag"
 version = "0.1.0"
-description = "Add your description here"
+description = "Document-grounded chat with citations, multi-LLM support, and event-driven ingestion"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dependencies = [

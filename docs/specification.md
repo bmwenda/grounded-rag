@@ -1,4 +1,4 @@
-# Simple RAG product and delivery specification
+# Grounded RAG product and delivery specification
 
 Status: Active backlog
 
@@ -6,7 +6,7 @@ Last verified against code and GitHub issues: 2026-10-14
 
 ## Purpose
 
-Simple RAG lets an organization's users ask questions over its indexed
+Grounded RAG lets an organization's users ask questions over its indexed
 knowledge and inspect citations from the retrieved source material. Answers
 must stay grounded in that material. Ingestion must be safe to retry without
 leaving duplicate or stale vector chunks.
@@ -91,31 +91,31 @@ user-facing fields.
 ### P0 — deliver the document upload and lifecycle API
 
 - [ ] [Measure and meet the five-minute searchable target for a 100 MiB
-  document](https://github.com/bmwenda/simple-rag/issues/8). Define bounded
+  document](https://github.com/bmwenda/grounded-rag/issues/8). Define bounded
   retries or failure when the target cannot be met.
 - [ ] [Define document lifecycle transitions and retry
-  rules](https://github.com/bmwenda/simple-rag/issues/9), including upload,
+  rules](https://github.com/bmwenda/grounded-rag/issues/9), including upload,
   processing, ready, failed, deleting, and deleted states.
 - [ ] [Unify local and S3 document storage behind an
-  abstraction](https://github.com/bmwenda/simple-rag/issues/10) so ingestion
+  abstraction](https://github.com/bmwenda/grounded-rag/issues/10) so ingestion
   services do not depend on local paths or S3-specific types.
 - [ ] [Create upload, status, and deletion application
-  services](https://github.com/bmwenda/simple-rag/issues/11), with recoverable
+  services](https://github.com/bmwenda/grounded-rag/issues/11), with recoverable
   document deletion across object storage, vector chunks, and the registry.
 - [ ] [Issue scoped, short-lived upload
-  URLs](https://github.com/bmwenda/simple-rag/issues/12) for configured storage
+  URLs](https://github.com/bmwenda/grounded-rag/issues/12) for configured storage
   locations; callers must not choose arbitrary buckets or object keys.
 - [ ] [Support multipart uploads when the configured size threshold
-  requires them](https://github.com/bmwenda/simple-rag/issues/13), including
+  requires them](https://github.com/bmwenda/grounded-rag/issues/13), including
   completion, abort, and abandoned-upload cleanup.
-- [ ] [Validate uploads before indexing](https://github.com/bmwenda/simple-rag/issues/14):
+- [ ] [Validate uploads before indexing](https://github.com/bmwenda/grounded-rag/issues/14):
   extension, detected content type, size, checksum, normalized display name,
   and the malware-scanning integration point.
 - [ ] [Delete documents through a recoverable
-  workflow](https://github.com/bmwenda/simple-rag/issues/15), removing the
+  workflow](https://github.com/bmwenda/grounded-rag/issues/15), removing the
   source object, every indexed chunk version, and the registry record.
 - [ ] [Expose versioned HTTP routes for document upload, completion, status,
-  deletion, and service health](https://github.com/bmwenda/simple-rag/issues/36).
+  deletion, and service health](https://github.com/bmwenda/grounded-rag/issues/36).
   Enforce `MAX_DOCUMENT_SIZE_BYTES` at each upload boundary, return documented
   responses, and sanitize errors.
 
@@ -127,33 +127,33 @@ or vector chunk. Size limits apply at every upload and ingestion boundary.
 
 - [ ] [Provision the private source bucket, SQS queue, dead letter queue,
   encryption, and least-privilege IAM with
-  OpenTofu](https://github.com/bmwenda/simple-rag/issues/16).
+  OpenTofu](https://github.com/bmwenda/grounded-rag/issues/16).
 - [ ] [Deploy the ingestion worker as a Lambda container
-  image](https://github.com/bmwenda/simple-rag/issues/83), including the ECR
+  image](https://github.com/bmwenda/grounded-rag/issues/83), including the ECR
   repository and SQS event-source mapping.
 - [ ] [Configure S3 object-created notifications and supported-document
-  filters](https://github.com/bmwenda/simple-rag/issues/17), delivering only
+  filters](https://github.com/bmwenda/grounded-rag/issues/17), delivering only
   to the ingestion queue.
 - [ ] [Report partial SQS batch
-  failures](https://github.com/bmwenda/simple-rag/issues/18) so successful
+  failures](https://github.com/bmwenda/grounded-rag/issues/18) so successful
   records are not retried with failed records.
 - [ ] [Set queue and Lambda timeouts, retries, concurrency, and dead letter
-  retention](https://github.com/bmwenda/simple-rag/issues/19) to support the
+  retention](https://github.com/bmwenda/grounded-rag/issues/19) to support the
   configured size limit and searchable-time target.
 - [ ] [Size Lambda memory and ephemeral storage for the supported parsing
-  workload](https://github.com/bmwenda/simple-rag/issues/20) and verify it
+  workload](https://github.com/bmwenda/grounded-rag/issues/20) and verify it
   against the five-minute target.
 - [ ] [Emit structured, sanitized ingestion
-  logs](https://github.com/bmwenda/simple-rag/issues/21) with document and SQS
+  logs](https://github.com/bmwenda/grounded-rag/issues/21) with document and SQS
   identifiers, without credentials or document content.
 - [ ] [Publish operational metrics and
-  alarms](https://github.com/bmwenda/simple-rag/issues/22) for queue age, dead
+  alarms](https://github.com/bmwenda/grounded-rag/issues/22) for queue age, dead
   letter depth, outcomes, object size, parsing, chunking, embedding latency,
   and retries.
 - [ ] [Exercise the complete S3 -> SQS -> Lambda path in an AWS or compatible
-  integration environment](https://github.com/bmwenda/simple-rag/issues/23).
+  integration environment](https://github.com/bmwenda/grounded-rag/issues/23).
 - [ ] [Generate large-document integration coverage for bounded memory and
-  object-size enforcement](https://github.com/bmwenda/simple-rag/issues/24).
+  object-size enforcement](https://github.com/bmwenda/grounded-rag/issues/24).
 
 Definition of done: operators can deploy and observe the event path, safely
 retry failures, and handle poison messages without manual local ingestion.
@@ -161,15 +161,15 @@ retry failures, and handle poison messages without manual local ingestion.
 ### P1 — complete durable ingestion coordination
 
 - [ ] [Persist ingestion jobs, attempts, leases, and ownership boundaries in
-  PostgreSQL](https://github.com/bmwenda/simple-rag/issues/25). SQLAlchemy,
+  PostgreSQL](https://github.com/bmwenda/grounded-rag/issues/25). SQLAlchemy,
   Alembic, and the existing document registry are already in place; this item
   covers the remaining coordination model.
 - [ ] [Claim ingestion work transactionally with expiring
-  leases](https://github.com/bmwenda/simple-rag/issues/28) so concurrent
+  leases](https://github.com/bmwenda/grounded-rag/issues/28) so concurrent
   workers cannot index the same document version.
 - [ ] [Add PostgreSQL-backed integration coverage for idempotency, concurrent
   claims, retries, migrations, startup validation, and
-  health](https://github.com/bmwenda/simple-rag/issues/30).
+  health](https://github.com/bmwenda/grounded-rag/issues/30).
 
 Definition of done: ingestion work and recovery decisions are durable,
 coordinated across workers, and verified against PostgreSQL.
@@ -177,12 +177,12 @@ coordinated across workers, and verified against PostgreSQL.
 ### P1 — prepare vector storage for production use
 
 - [x] [Use PostgreSQL pgvector
-  storage](https://github.com/bmwenda/simple-rag/issues/85) for ingestion and
+  storage](https://github.com/bmwenda/grounded-rag/issues/85) for ingestion and
   retrieval.
 - [ ] [Containerize the web app and local pgvector
   stack](../README.md#local-development) before the hosted demo.
 - [ ] [Add pgvector health checks and recovery
-  guidance](https://github.com/bmwenda/simple-rag/issues/34) for failed writes,
+  guidance](https://github.com/bmwenda/grounded-rag/issues/34) for failed writes,
   stale versions, and restore operations.
 
 Definition of done: operators can deploy, validate, back up, restore, and
@@ -191,28 +191,28 @@ re-index the vector store within documented limits.
 ### P2 — evaluate answer quality and prepare safe operation
 
 - [ ] [Build a versioned retrieval and answer evaluation
-  set](https://github.com/bmwenda/simple-rag/issues/43) with expected source
+  set](https://github.com/bmwenda/grounded-rag/issues/43) with expected source
   documents, answers, citations, abstentions, and adversarial or ambiguous
   questions.
 - [ ] [Record retrieval, citation, groundedness, abstention, latency, and
-  model-cost measurements](https://github.com/bmwenda/simple-rag/issues/44) for
+  model-cost measurements](https://github.com/bmwenda/grounded-rag/issues/44) for
   material retrieval or prompt changes.
 - [ ] [Add dependency, secret, and static-security scanning to
-  CI](https://github.com/bmwenda/simple-rag/issues/45), with defined severity
+  CI](https://github.com/bmwenda/grounded-rag/issues/45), with defined severity
   thresholds.
 - [ ] [Record sanitized authentication and authorization audit
-  events](https://github.com/bmwenda/simple-rag/issues/46) without tokens,
+  events](https://github.com/bmwenda/grounded-rag/issues/46) without tokens,
   message content, or other secrets. The single-owner bearer-token check and
   ownership enforcement are already implemented.
 - [ ] [Define document retention, deletion, privacy, and incident-response
-  policies](https://github.com/bmwenda/simple-rag/issues/48) before accepting
+  policies](https://github.com/bmwenda/grounded-rag/issues/48) before accepting
   production documents. Chat/profile immediate hiding and 29-day scheduled
   purge are already implemented.
 - [ ] [Set rate limits, request limits, model usage limits, and spend
-  alerts](https://github.com/bmwenda/simple-rag/issues/49) before any public
+  alerts](https://github.com/bmwenda/grounded-rag/issues/49) before any public
   or multi-user deployment.
 - [ ] [Write a deployment and operations
-  runbook](https://github.com/bmwenda/simple-rag/issues/50) for configuration,
+  runbook](https://github.com/bmwenda/grounded-rag/issues/50) for configuration,
   migrations, rollback, backups, dead letter queues, vector recovery, and
   incident triage.
 

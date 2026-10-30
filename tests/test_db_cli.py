@@ -11,7 +11,7 @@ LOCAL_DATABASE_URL = URL.create(
     username="developer",
     host="localhost",
     port=5432,
-    database="simple_rag_local",
+    database="grounded_rag_local",
 )
 
 
@@ -31,7 +31,7 @@ def test_create_database_creates_missing_local_database() -> None:
     statements = [str(call.args[0]) for call in connection.execute.call_args_list]
     assert "SELECT 1 FROM pg_database WHERE datname = %s" in statements[0]
     assert "CREATE DATABASE" in statements[1]
-    assert connection.execute.call_args_list[0].args[1] == ("simple_rag_local",)
+    assert connection.execute.call_args_list[0].args[1] == ("grounded_rag_local",)
     assert connect.call_args.kwargs["autocommit"] is True
 
 
@@ -70,7 +70,7 @@ def test_drop_database_drops_after_confirmation() -> None:
 
     with (
         patch("src.db_cli.database_url_from_env", return_value=LOCAL_DATABASE_URL),
-        patch("builtins.input", return_value="simple_rag_local"),
+        patch("builtins.input", return_value="grounded_rag_local"),
         patch("src.db_cli.psycopg.connect") as connect,
     ):
         connect.return_value.__enter__.return_value = connection

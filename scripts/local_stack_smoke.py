@@ -70,7 +70,7 @@ def main() -> None:
     engine = create_database_engine(database_url)
     document_id: str | None = None
     try:
-        with TemporaryDirectory(prefix="simple-rag-smoke-") as directory:
+        with TemporaryDirectory(prefix="grounded-rag-smoke-") as directory:
             source = Path(directory) / "smoke.txt"
             source.write_text("The local Docker pgvector smoke check passes.")
             result = DocumentIngestionService(

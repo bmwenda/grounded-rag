@@ -7,8 +7,8 @@ mock_provider "aws" {
 
   mock_resource "aws_s3_bucket" {
     defaults = {
-      id  = "simple-rag-test-sources"
-      arn = "arn:aws:s3:::simple-rag-test-sources"
+      id  = "grounded-rag-test-sources"
+      arn = "arn:aws:s3:::grounded-rag-test-sources"
     }
   }
 
@@ -21,7 +21,7 @@ mock_provider "aws" {
 
   mock_resource "aws_iam_role" {
     defaults = {
-      arn = "arn:aws:iam::123456789012:role/simple-rag-ingestion-role"
+      arn = "arn:aws:iam::123456789012:role/grounded-rag-ingestion-role"
     }
   }
 
@@ -39,26 +39,26 @@ mock_provider "aws" {
 
   mock_resource "aws_ecr_repository" {
     defaults = {
-      repository_url = "123456789012.dkr.ecr.eu-west-1.amazonaws.com/simple-rag-ingestion"
+      repository_url = "123456789012.dkr.ecr.eu-west-1.amazonaws.com/grounded-rag-ingestion"
     }
   }
 
   mock_resource "aws_lambda_function" {
     defaults = {
-      arn = "arn:aws:lambda:eu-west-1:123456789012:function:simple-rag-ingestion"
+      arn = "arn:aws:lambda:eu-west-1:123456789012:function:grounded-rag-ingestion"
     }
   }
 
   mock_resource "aws_cloudwatch_log_group" {
     defaults = {
-      arn = "arn:aws:logs:eu-west-1:123456789012:log-group:/aws/lambda/simple-rag-ingestion"
+      arn = "arn:aws:logs:eu-west-1:123456789012:log-group:/aws/lambda/grounded-rag-ingestion"
     }
   }
 }
 
 variables {
   aws_region         = "eu-west-1"
-  source_bucket_name = "simple-rag-test-sources"
+  source_bucket_name = "grounded-rag-test-sources"
 }
 
 run "secure_ingestion_plan" {
@@ -174,7 +174,7 @@ run "deploy_image_digest" {
   }
 
   assert {
-    condition     = jsondecode(aws_ecr_repository_policy.ingestion.policy).Statement[0].Condition.ArnEquals["aws:SourceArn"] == "arn:aws:lambda:eu-west-1:123456789012:function:simple-rag-ingestion"
+    condition     = jsondecode(aws_ecr_repository_policy.ingestion.policy).Statement[0].Condition.ArnEquals["aws:SourceArn"] == "arn:aws:lambda:eu-west-1:123456789012:function:grounded-rag-ingestion"
     error_message = "ECR pull permissions must be scoped to the ingestion function."
   }
 }

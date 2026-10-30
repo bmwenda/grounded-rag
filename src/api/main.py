@@ -53,7 +53,11 @@ def create_app(
                 del application.state.profile_repository
 
     application = FastAPI(
-        lifespan=lifespan, openapi_url=None, docs_url=None, redoc_url=None
+        title="Grounded RAG",
+        lifespan=lifespan,
+        openapi_url=None,
+        docs_url=None,
+        redoc_url=None,
     )
     register_error_handlers(application)
     application.include_router(profile_router, prefix="/v1")
