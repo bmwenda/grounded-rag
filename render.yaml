@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: simple-rag-demo
+    name: grounded-rag
     runtime: docker
     plan: free
     region: oregon
